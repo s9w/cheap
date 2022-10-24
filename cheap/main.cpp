@@ -2,6 +2,7 @@
 #include <vector>
 #include <variant>
 #include <format>
+#include <optional>
 #include <fstream>
 
 
@@ -70,7 +71,7 @@ namespace cheap
    {
       using variant::variant;
 
-      [[nodiscard]] auto has_content() const
+      [[nodiscard]] auto has_content() const -> bool
       {
          const auto visitor = [](const auto& alternative)
          {
@@ -78,6 +79,21 @@ namespace cheap
          };
          return std::visit(visitor, *this);
       }
+
+
+      [[nodiscard]] auto get_trivial_content() const -> std::optional<std::string>
+      {
+         const auto visitor = [](const auto& alternative) -> std::optional<std::string>
+         {
+            if(alternative.m_inner_html.size() == 1 && std::holds_alternative<std::string>(alternative.m_inner_html.front()))
+            {
+               return std::get<std::string>(alternative.m_inner_html.front());
+            }
+            return std::nullopt;
+         };
+         return std::visit(visitor, *this);
+      }
+
 
       [[nodiscard]] auto get_element_name() const -> std::string
       {
@@ -186,24 +202,37 @@ namespace cheap
       return std::format("{}{}", get_spaces(level * indent), elem);
    }
 
+   namespace detail
+   {
+      [[nodiscard]] auto get_joined_strings(
+         const std::vector<std::string>& strings,
+         const std::string& delim
+      ) -> std::string
+      {
+         if (strings.empty())
+            return std::string{};
+         std::string result = strings[0];
+         for (int i = 1; i < strings.size(); ++i)
+            result += std::format("{}{}", delim, strings[i]);
+         return result;
+      }
+   }
+
 
    [[nodiscard]] auto get_inner_html_str(const element& variant, const int level) -> std::string
    {
-      const auto outer_visitor = [&](const auto& element) {
-         if (element.m_inner_html.empty())
-            return std::string{};
-
-         std::string inner_html_str = "\n";
-         const auto content_visitor = [&]<typename T>(const T & alternative) -> std::string
+      const auto outer_visitor = [&](const auto& element) -> std::string
+      {
+         std::vector<std::string> lines;
+         const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
          {
             return get_element_str(alternative, level + 1);
          };
          for (const auto& inner_element : element.m_inner_html)
          {
-            inner_html_str += std::visit(content_visitor, inner_element);
-            inner_html_str += "\n";
+            lines.push_back(std::visit(content_visitor, inner_element));
          }
-         return inner_html_str;
+         return detail::get_joined_strings(lines, "\n");
       };
 
       return std::visit(outer_visitor, variant);
@@ -212,17 +241,25 @@ namespace cheap
 
    [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string
    {
-      const std::string opening_indent_str = get_spaces(level * indent);
-      const std::string closing_indent_str = elem.has_content() ? opening_indent_str : "";
-      return std::format(
-         "{}<{}{}>{}{}</{}>",
-         opening_indent_str,
-         elem.get_element_name(),
-         get_attribute_str(elem),
-         get_inner_html_str(elem, level),
-         closing_indent_str,
-         elem.get_element_name()
-      );
+      if(const auto x = elem.get_trivial_content(); x.has_value())
+      {
+         return std::format(
+            "{}<{}>{}</{}>",
+            get_spaces(level * indent),
+            elem.get_element_name(),
+            x.value(),
+            elem.get_element_name()
+         );
+      }
+      else
+      {
+         std::vector<std::string> lines;
+         lines.reserve(3);
+         lines.push_back(std::format("<{}>", elem.get_element_name()));
+         lines.push_back(get_inner_html_str(elem, level));
+         lines.push_back(std::format("</{}>", elem.get_element_name()));
+         return detail::get_joined_strings(lines, "\n");
+      }
    }
 }
 
