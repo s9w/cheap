@@ -10,38 +10,64 @@ namespace cheap
 {
    namespace detail
    {
-      struct boolean_attribute
+      struct global_boolean_attribute
       {
          bool m_value = true;
       };
 
-      struct string_attribute
+      struct global_string_attribute
       {
          std::string m_value;
       };
 
       template<typename T>
-      struct enumerated_attribute
+      struct global_enumerated_attribute
       {
          using enum_type = T;
          T m_value;
-         explicit enumerated_attribute(const T initial) : m_value(initial) {}
+         explicit global_enumerated_attribute(const T initial) : m_value(initial) {}
       };
 
       template<typename T>
-      concept boolean_attribute_c = std::derived_from<T, boolean_attribute>;
+      concept boolean_attribute_c = std::derived_from<T, global_boolean_attribute>;
       template<typename T>
-      concept string_attribute_c = std::derived_from<T, string_attribute>;
+      concept string_attribute_c = std::derived_from<T, global_string_attribute>;
       template<typename T, typename state = typename T::enum_type>
-      concept enumeration_attribute_c = std::derived_from<T, enumerated_attribute<state>>;
+      concept enumeration_attribute_c = std::derived_from<T, global_enumerated_attribute<state>>;
    }
 
-   struct autofocus : detail::boolean_attribute { };
-   struct accesskey : detail::string_attribute { };
+   // Attribite list from https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes
+   struct autofocus : detail::global_boolean_attribute { };
+   struct accesskey : detail::global_string_attribute { };
    enum class autocapitalize_state{off, on, sentences, words, characters};
-   struct autocapitalize : detail::enumerated_attribute<autocapitalize_state>{ using enumerated_attribute::enumerated_attribute; };
+   struct autocapitalize : detail::global_enumerated_attribute<autocapitalize_state>{ using global_enumerated_attribute::global_enumerated_attribute; };
+   enum class true_false_state { true_, false_ };
+   struct contenteditable : detail::global_enumerated_attribute<true_false_state> { using global_enumerated_attribute::global_enumerated_attribute; };
+   enum class dir_state { ltr, rtl, auto_ };
+   struct dir : detail::global_enumerated_attribute<dir_state> { using global_enumerated_attribute::global_enumerated_attribute; };
+   struct draggable : detail::global_enumerated_attribute<true_false_state> { using global_enumerated_attribute::global_enumerated_attribute; };
+   enum class enterkeyhint_state { enter, done, go, next, previous, search, send };
+   struct enterkeyhint : detail::global_enumerated_attribute<enterkeyhint_state> { using global_enumerated_attribute::global_enumerated_attribute; };
+   struct hidden : detail::global_boolean_attribute { };
+   struct id : detail::global_string_attribute { };
+   enum class inputmode_state{ none, text, decimal, numeric, tel, search, email, url };
+   struct inputmode : detail::global_enumerated_attribute<inputmode_state> { using global_enumerated_attribute::global_enumerated_attribute; };
+   struct is : detail::global_string_attribute { };
+   struct itemid : detail::global_string_attribute { };
+   struct itemref : detail::global_string_attribute { };
+   struct itemscope : detail::global_boolean_attribute { };
+   struct itemtype : detail::global_string_attribute { };
 
-   using attribute = std::variant<autofocus, accesskey, autocapitalize>;
+   struct arbitrary_attribute {
+      std::string m_name;
+      std::string m_data;
+   };
+   struct data_attribute{
+      std::string m_name;
+      std::string m_data;
+   };
+
+   using attribute = std::variant<arbitrary_attribute, data_attribute, autofocus, accesskey, autocapitalize, contenteditable, dir, draggable, enterkeyhint, hidden, id, inputmode, is, itemid, itemref, itemscope, itemtype>;
 
    struct element;
    using content = std::variant<element, std::string>;
@@ -205,7 +231,7 @@ namespace cheap
       [[nodiscard]] auto get_element_name() const -> std::string
       {
          struct visitor {
-            auto operator()(const arbitrary_element& el) -> std::string { return el.m_type; }
+            auto operator()(const arbitrary_element& el) const -> std::string { return el.m_type; }
 
             auto operator()(const html&) const -> std::string { return "html"; }
             auto operator()(const base&) const -> std::string { return "base"; }
@@ -330,6 +356,18 @@ namespace cheap
       template<> struct attribute_name<autofocus> { constexpr static inline std::string_view value = "autofocus"; };
       template<> struct attribute_name<accesskey> { constexpr static inline std::string_view value = "accesskey"; };
       template<> struct attribute_name<autocapitalize> { constexpr static inline std::string_view value = "autocapitalize"; };
+      template<> struct attribute_name<contenteditable> { constexpr static inline std::string_view value = "contenteditable"; };
+      template<> struct attribute_name<dir> { constexpr static inline std::string_view value = "dir"; };
+      template<> struct attribute_name<draggable> { constexpr static inline std::string_view value = "draggable"; };
+      template<> struct attribute_name<enterkeyhint> { constexpr static inline std::string_view value = "enterkeyhint"; };
+      template<> struct attribute_name<hidden> { constexpr static inline std::string_view value = "hidden"; };
+      template<> struct attribute_name<id> { constexpr static inline std::string_view value = "id"; };
+      template<> struct attribute_name<inputmode> { constexpr static inline std::string_view value = "inputmode"; };
+      template<> struct attribute_name<is> { constexpr static inline std::string_view value = "is"; };
+      template<> struct attribute_name<itemid> { constexpr static inline std::string_view value = "itemid"; };
+      template<> struct attribute_name<itemref> { constexpr static inline std::string_view value = "itemref"; };
+      template<> struct attribute_name<itemscope> { constexpr static inline std::string_view value = "itemscope"; };
+      template<> struct attribute_name<itemtype> { constexpr static inline std::string_view value = "itemtype"; };
       template<typename T> constexpr inline static std::string_view attribute_name_v = attribute_name<T>::value;
 
       [[nodiscard]] auto to_string(const autocapitalize_state& state) -> std::string
@@ -341,6 +379,54 @@ namespace cheap
          case autocapitalize_state::sentences: return "sentences";
          case autocapitalize_state::words: return "words";
          case autocapitalize_state::characters: return "characters";
+         }
+         std::terminate();
+      }
+      [[nodiscard]] auto to_string(const true_false_state& state) -> std::string
+      {
+         switch (state)
+         {
+         case true_false_state::true_: return "true";
+         case true_false_state::false_: return "false";
+         }
+         std::terminate();
+      }
+      [[nodiscard]] auto to_string(const dir_state& state) -> std::string
+      {
+         switch (state)
+         {
+         case dir_state::ltr: return "ltr";
+         case dir_state::rtl: return "rtl";
+         case dir_state::auto_: return "auto";
+         }
+         std::terminate();
+      }
+      [[nodiscard]] auto to_string(const enterkeyhint_state& state) -> std::string
+      {
+         switch (state)
+         {
+         case enterkeyhint_state::enter: return "enter";
+         case enterkeyhint_state::done: return "done";
+         case enterkeyhint_state::go: return "go";
+         case enterkeyhint_state::next: return "next";
+         case enterkeyhint_state::previous: return "previous";
+         case enterkeyhint_state::search: return "search";
+         case enterkeyhint_state::send: return "send";
+         }
+         std::terminate();
+      }
+      [[nodiscard]] auto to_string(const inputmode_state& state) -> std::string
+      {
+         switch (state)
+         {
+         case inputmode_state::none: return "none";
+         case inputmode_state::text: return "text";
+         case inputmode_state::decimal: return "decimal";
+         case inputmode_state::numeric: return "numeric";
+         case inputmode_state::tel: return "tel";
+         case inputmode_state::search: return "search";
+         case inputmode_state::email: return "email";
+         case inputmode_state::url: return "url";
          }
          std::terminate();
       }
@@ -371,6 +457,16 @@ namespace cheap
          return std::format("{}=\"{}\"", attribute_name_v<enum_attrib_type>, to_string(attrib.m_value));
       }
 
+
+      [[nodiscard]] auto to_string(const arbitrary_attribute& attrib) -> std::string
+      {
+         return std::format("{}=\"{}\"", attrib.m_name, attrib.m_data);
+      }
+
+      [[nodiscard]] auto to_string(const data_attribute& attrib) -> std::string
+      {
+         return std::format("data-{}=\"{}\"", attrib.m_name, attrib.m_data);
+      }
 
 
       [[nodiscard]] auto to_string(const std::vector<attribute>& attributes) -> std::string
