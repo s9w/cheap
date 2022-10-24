@@ -43,8 +43,13 @@ namespace cheap
 
    using attribute = std::variant<autofocus, accesskey, autocapitalize>;
 
+   struct string_element
+   {
+      std::string m_value;
+   };
+
    struct element;
-   using content = std::variant<element, std::string>;
+   using content = std::variant<element, string_element>;
 
 
    struct element
@@ -116,39 +121,46 @@ namespace cheap
       }
       return result;
    }
-   
 
-   [[nodiscard]] auto to_string(const element& elem, const int multiply=0) -> std::string
+   constexpr int indent = 3;
+
+   auto get_spaces(const int count) -> std::string
    {
-      constexpr int indent = 4;
+      std::string result;
+      for (int i = 0; i < count; ++i)
+         result += ' ';
+      return result;
+   }
 
+   [[nodiscard]] auto to_string(const string_element& elem, const int level)->std::string
+   {
+      return std::format("{}{}", get_spaces(level * indent), elem.m_value);
+   }
 
+   [[nodiscard]] auto to_string(const element& elem, const int level=0) -> std::string
+   {
       std::string inner_html_str;
       if (elem.m_inner_html.empty() == false)
          inner_html_str = "\n";
       const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
       {
-         if constexpr(std::same_as<T, element>)
-         {
-            return to_string(alternative, multiply+1);
-         }
-         else if constexpr (std::same_as<T, std::string>)
-         {
-            return alternative;
-         }
+         return to_string(alternative, level + 1);
       };
       for(const auto& inner_element : elem.m_inner_html)
       {
-         inner_html_str += std::format("{: >{}}", "", multiply*indent);
          inner_html_str += std::visit(content_visitor, inner_element);
          inner_html_str += "\n";
       }
 
+      const std::string opening_indent_str = get_spaces(level * indent);
+      const std::string closing_indent_str = (elem.m_inner_html.empty() == false) ? opening_indent_str : "";
       return std::format(
-         "<{}{}>{}</{}>",
+         "{}<{}{}>{}{}</{}>",
+         opening_indent_str,
          elem.m_type,
          to_string(elem.m_attributes),
          inner_html_str,
+         closing_indent_str,
          elem.m_type
       );
    }
@@ -192,8 +204,8 @@ int main()
    test(to_string(std::vector<attribute>{}), "");
    test(to_string(std::vector<attribute>{autofocus{}, autocapitalize{autocapitalize_state::off}}), " autofocus autocapitalize=\"off\"");
    
-   element sub{ .m_type="span", .m_inner_html={"content0"} };
-   element main{ "div", {accesskey{"test"}, autocapitalize{autocapitalize_state::off}}, {"content0", sub} };
+   element sub{ .m_type = "span", .m_inner_html = {string_element{"content0"}} };
+   element main{ "div", {accesskey{"test"}, autocapitalize{autocapitalize_state::off}}, {string_element{"content0"}, sub} };
    const auto str = to_string(main);
    // const auto str = to_string(sub);
 
