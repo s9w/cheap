@@ -473,7 +473,14 @@ namespace cheap
          return result;
       }
    }
-}
+
+   // std::string operator "" _att(const char* str, std::size_t)
+   // {
+   //    int stop = 0;
+   //    return "";
+   // }
+
+} // namespace cheap
 
 
 auto test(const bool value) -> void
@@ -502,6 +509,8 @@ int main()
    // cheap::
 
    using namespace cheap;
+
+   // "abc"_att;
 
    // const std::string x = std::format("{: >{}}", "", 5);
 
