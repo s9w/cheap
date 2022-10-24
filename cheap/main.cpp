@@ -204,16 +204,22 @@ namespace cheap
 
    namespace detail
    {
-      [[nodiscard]] auto get_joined_strings(
-         const std::vector<std::string>& strings,
-         const std::string& delim
+      template<typename variant_type, typename visitor_type>
+      [[nodiscard]] auto get_joined_visits(
+         const std::vector<variant_type>& variants,
+         const visitor_type& visitor,
+         const std::string_view delim
       ) -> std::string
       {
-         if (strings.empty())
+         if (variants.empty())
             return std::string{};
-         std::string result = strings[0];
-         for (int i = 1; i < strings.size(); ++i)
-            result += std::format("{}{}", delim, strings[i]);
+         std::string result;
+         for (int i = 0; i < std::ssize(variants); ++i)
+         {
+            if (i > 0)
+               result += '\n';
+            result += std::visit(visitor, variants[i]);
+         }
          return result;
       }
    }
@@ -223,18 +229,14 @@ namespace cheap
    {
       const auto outer_visitor = [&](const auto& element) -> std::string
       {
-         std::vector<std::string> lines;
          const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
          {
             return get_element_str(alternative, level + 1);
          };
-         for (const auto& inner_element : element.m_inner_html)
-         {
-            lines.push_back(std::visit(content_visitor, inner_element));
-         }
-         return detail::get_joined_strings(lines, "\n");
+   
+         return detail::get_joined_visits(element.m_inner_html, content_visitor, "\n");
       };
-
+   
       return std::visit(outer_visitor, variant);
    }
 
@@ -253,12 +255,13 @@ namespace cheap
       }
       else
       {
-         std::vector<std::string> lines;
-         lines.reserve(3);
-         lines.push_back(std::format("<{}>", elem.get_element_name()));
-         lines.push_back(get_inner_html_str(elem, level));
-         lines.push_back(std::format("</{}>", elem.get_element_name()));
-         return detail::get_joined_strings(lines, "\n");
+         std::string result;
+         result += std::format("<{}>", elem.get_element_name());
+         result += '\n';
+         result += get_inner_html_str(elem, level);
+         result += '\n';
+         result += std::format("</{}>", elem.get_element_name());
+         return result;
       }
    }
 }
