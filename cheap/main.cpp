@@ -43,13 +43,8 @@ namespace cheap
 
    using attribute = std::variant<autofocus, accesskey, autocapitalize>;
 
-   struct string_element
-   {
-      std::string m_value;
-   };
-
    struct element;
-   using content = std::variant<element, string_element>;
+   using content = std::variant<element, std::string>;
 
 
    struct arbitrary_element
@@ -186,9 +181,9 @@ namespace cheap
    }
 
 
-   [[nodiscard]] auto to_string(const string_element& elem, const int level) -> std::string
+   [[nodiscard]] auto get_element_str(const std::string& elem, const int level) -> std::string
    {
-      return std::format("{}{}", get_spaces(level * indent), elem.m_value);
+      return std::format("{}{}", get_spaces(level * indent), elem);
    }
 
 
@@ -201,7 +196,7 @@ namespace cheap
          std::string inner_html_str = "\n";
          const auto content_visitor = [&]<typename T>(const T & alternative) -> std::string
          {
-            return to_string(alternative, level + 1);
+            return get_element_str(alternative, level + 1);
          };
          for (const auto& inner_element : element.m_inner_html)
          {
@@ -215,7 +210,7 @@ namespace cheap
    }
 
 
-   [[nodiscard]] auto to_string(const element& elem, const int level = 0) -> std::string
+   [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string
    {
       const std::string opening_indent_str = get_spaces(level * indent);
       const std::string closing_indent_str = elem.has_content() ? opening_indent_str : "";
@@ -269,12 +264,12 @@ int main()
    test(to_string(std::vector<attribute>{}), "");
    test(to_string(std::vector<attribute>{autofocus{}, autocapitalize{autocapitalize_state::off}}), " autofocus autocapitalize=\"off\"");
    
-   arbitrary_element sub{ .m_type = "span", .m_inner_html = {string_element{"content0"}} };
-   span s0{ .m_inner_html = {string_element{}} };
+   arbitrary_element sub{ .m_type = "span", .m_inner_html = {"content0"} };
+   span s0{ .m_inner_html = {""}};
    cheap::div main{
-      .m_inner_html = {string_element{"content0"}, sub, s0}
+      .m_inner_html = {"content0", sub, s0}
    };
-   const auto str = to_string(main);
+   const auto str = get_element_str(main);
 
    std::ofstream file_out("test.html");
    file_out << str;
