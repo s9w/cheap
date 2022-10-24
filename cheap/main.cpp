@@ -48,8 +48,8 @@ namespace cheap
       std::string m_value;
    };
 
-   struct arbitrary_element;
-   using content = std::variant<arbitrary_element, string_element>;
+   struct element;
+   using content = std::variant<element, string_element>;
 
 
    struct arbitrary_element
@@ -59,13 +59,19 @@ namespace cheap
       std::vector<content> m_inner_html;
    };
 
-   struct div
+   template<int>
+   struct generic_element
    {
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
    };
 
-   struct element : std::variant<arbitrary_element, div>
+   using div = generic_element<__COUNTER__>;
+   using span = generic_element<__COUNTER__>;
+   using svg = generic_element<__COUNTER__>;
+   
+
+   struct element : std::variant<arbitrary_element, div, span, svg>
    {
       using variant::variant;
 
@@ -86,10 +92,9 @@ namespace cheap
             {
                return alternative.m_type;
             }
-            else if constexpr (std::same_as<T, div>)
-            {
-               return std::string{ "div" };
-            }
+            else if constexpr (std::same_as<T, div>) { return std::string{ "div" }; }
+            else if constexpr (std::same_as<T, span>) { return std::string{ "span" }; }
+            else if constexpr (std::same_as<T, svg>) { return std::string{ "svg" }; }
          };
          return std::visit(visitor, *this);
       }
@@ -265,8 +270,9 @@ int main()
    test(to_string(std::vector<attribute>{autofocus{}, autocapitalize{autocapitalize_state::off}}), " autofocus autocapitalize=\"off\"");
    
    arbitrary_element sub{ .m_type = "span", .m_inner_html = {string_element{"content0"}} };
+   span s0{ .m_inner_html = {string_element{}} };
    cheap::div main{
-      .m_inner_html = {string_element{"content0"}, sub}
+      .m_inner_html = {string_element{"content0"}, sub, s0}
    };
    const auto str = to_string(main);
 
