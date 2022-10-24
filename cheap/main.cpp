@@ -48,19 +48,55 @@ namespace cheap
       std::string m_value;
    };
 
-   struct element;
-   using content = std::variant<element, string_element>;
+   struct arbitrary_element;
+   using content = std::variant<arbitrary_element, string_element>;
 
 
-   struct element
+   struct arbitrary_element
    {
       std::string m_type;
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
    };
 
+   struct div
+   {
+      std::vector<attribute> m_attributes;
+      std::vector<content> m_inner_html;
+   };
+
+   struct element : std::variant<arbitrary_element, div>
+   {
+      using variant::variant;
+
+      [[nodiscard]] auto has_content() const
+      {
+         const auto visitor = [](const auto& alternative)
+         {
+            return alternative.m_inner_html.size() != 0;
+         };
+         return std::visit(visitor, *this);
+      }
+
+      [[nodiscard]] auto get_element_name() const -> std::string
+      {
+         const auto visitor = []<typename T>(const T& alternative)
+         {
+            if constexpr(std::same_as<T, arbitrary_element>)
+            {
+               return alternative.m_type;
+            }
+            else if constexpr (std::same_as<T, div>)
+            {
+               return std::string{ "div" };
+            }
+         };
+         return std::visit(visitor, *this);
+      }
+   };
+
    static_assert(std::is_aggregate_v<accesskey>);
-   // static_assert(std::is_aggregate_v<element>);
+   static_assert(std::is_aggregate_v<arbitrary_element>);
 
    template<typename T>
    struct attribute_name { };
@@ -122,46 +158,70 @@ namespace cheap
       return result;
    }
 
+
+   [[nodiscard]] auto get_attribute_str(const element& elem) -> std::string
+   {
+      const auto visitor = []<typename T>(const T& alternative)
+      {
+         return to_string(alternative.m_attributes);
+      };
+      return std::visit(visitor, elem);
+   }
+
+
    constexpr int indent = 3;
 
    auto get_spaces(const int count) -> std::string
    {
       std::string result;
+      result.reserve(count);
       for (int i = 0; i < count; ++i)
          result += ' ';
       return result;
    }
 
-   [[nodiscard]] auto to_string(const string_element& elem, const int level)->std::string
+
+   [[nodiscard]] auto to_string(const string_element& elem, const int level) -> std::string
    {
       return std::format("{}{}", get_spaces(level * indent), elem.m_value);
    }
 
-   [[nodiscard]] auto to_string(const element& elem, const int level=0) -> std::string
-   {
-      std::string inner_html_str;
-      if (elem.m_inner_html.empty() == false)
-         inner_html_str = "\n";
-      const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
-      {
-         return to_string(alternative, level + 1);
-      };
-      for(const auto& inner_element : elem.m_inner_html)
-      {
-         inner_html_str += std::visit(content_visitor, inner_element);
-         inner_html_str += "\n";
-      }
 
+   [[nodiscard]] auto get_inner_html_str(const element& variant, const int level) -> std::string
+   {
+      const auto outer_visitor = [&](const auto& element) {
+         if (element.m_inner_html.empty())
+            return std::string{};
+
+         std::string inner_html_str = "\n";
+         const auto content_visitor = [&]<typename T>(const T & alternative) -> std::string
+         {
+            return to_string(alternative, level + 1);
+         };
+         for (const auto& inner_element : element.m_inner_html)
+         {
+            inner_html_str += std::visit(content_visitor, inner_element);
+            inner_html_str += "\n";
+         }
+         return inner_html_str;
+      };
+
+      return std::visit(outer_visitor, variant);
+   }
+
+
+   [[nodiscard]] auto to_string(const element& elem, const int level = 0) -> std::string
+   {
       const std::string opening_indent_str = get_spaces(level * indent);
-      const std::string closing_indent_str = (elem.m_inner_html.empty() == false) ? opening_indent_str : "";
+      const std::string closing_indent_str = elem.has_content() ? opening_indent_str : "";
       return std::format(
          "{}<{}{}>{}{}</{}>",
          opening_indent_str,
-         elem.m_type,
-         to_string(elem.m_attributes),
-         inner_html_str,
+         elem.get_element_name(),
+         get_attribute_str(elem),
+         get_inner_html_str(elem, level),
          closing_indent_str,
-         elem.m_type
+         elem.get_element_name()
       );
    }
 }
@@ -204,10 +264,11 @@ int main()
    test(to_string(std::vector<attribute>{}), "");
    test(to_string(std::vector<attribute>{autofocus{}, autocapitalize{autocapitalize_state::off}}), " autofocus autocapitalize=\"off\"");
    
-   element sub{ .m_type = "span", .m_inner_html = {string_element{"content0"}} };
-   element main{ "div", {accesskey{"test"}, autocapitalize{autocapitalize_state::off}}, {string_element{"content0"}, sub} };
+   arbitrary_element sub{ .m_type = "span", .m_inner_html = {string_element{"content0"}} };
+   cheap::div main{
+      .m_inner_html = {string_element{"content0"}, sub}
+   };
    const auto str = to_string(main);
-   // const auto str = to_string(sub);
 
    std::ofstream file_out("test.html");
    file_out << str;
