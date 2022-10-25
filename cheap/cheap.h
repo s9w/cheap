@@ -440,29 +440,34 @@ namespace cheap
    } // namespace detail
 
 
-   [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string
-   {
-      if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
-      {
-         return std::format(
-            "{}<{}{}>{}</{}>",
-            detail::get_spaces(level * detail::indent),
-            elem.m_type,
-            detail::get_attribute_str(elem),
-            trivial_content.value(),
-            elem.m_type
-         );
-      }
-      else
-      {
-         std::string result;
-         result += std::format("<{}{}>", elem.m_type, detail::get_attribute_str(elem));
-         result += '\n';
-         result += detail::get_inner_html_str(elem, level);
-         result += '\n';
-         result += std::format("</{}>", elem.m_type);
-         return result;
-      }
-   }
+   [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string;
 
 } // namespace cheap
+
+
+#ifdef CHEAP_IMPL
+[[nodiscard]] auto cheap::get_element_str(const element& elem, const int level) -> std::string
+{
+   if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
+   {
+      return std::format(
+         "{}<{}{}>{}</{}>",
+         detail::get_spaces(level * detail::indent),
+         elem.m_type,
+         detail::get_attribute_str(elem),
+         trivial_content.value(),
+         elem.m_type
+      );
+   }
+   else
+   {
+      std::string result;
+      result += std::format("<{}{}>", elem.m_type, detail::get_attribute_str(elem));
+      result += '\n';
+      result += detail::get_inner_html_str(elem, level);
+      result += '\n';
+      result += std::format("</{}>", elem.m_type);
+      return result;
+   }
+}
+#endif

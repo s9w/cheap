@@ -1,5 +1,6 @@
 // #include <fstream>
 
+#define CHEAP_IMPL
 #include "cheap.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
