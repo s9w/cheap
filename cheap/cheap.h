@@ -126,7 +126,7 @@ namespace cheap
             assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
          }
       }
-   }
+   } // namespace detail
 
 
    auto operator "" _att(const char* c_str, std::size_t size) -> attribute
@@ -164,15 +164,10 @@ namespace cheap
          : m_type(name)
          , m_attributes(attributes)
          , m_inner_html(inner_html)
-      {
-         
-      }
+      { }
       explicit element(const std::string_view name, const std::vector<content>& inner_html)
-         : m_type(name)
-         , m_inner_html(inner_html)
-      {
-
-      }
+         : element(name, {}, inner_html)
+      { }
 
       [[nodiscard]] auto get_trivial() const -> std::optional<std::string>
       {
@@ -184,11 +179,12 @@ namespace cheap
       }
    };
 
-   template<typename T, typename ... types>
-   constexpr bool is_any_of = (std::same_as<T, types> || ...);
 
    namespace detail
    {
+      template<typename T, typename ... types>
+      constexpr bool is_any_of = (std::same_as<T, types> || ...);
+
       template<typename T>
       auto process(element& result, T&& arg) -> void
       {
@@ -223,7 +219,7 @@ namespace cheap
             result.m_inner_html.push_back(arg);
          }
       }
-   }
+   } // namespace detail
 
    template<typename ... Ts>
    auto create_element(Ts&&... args) -> element
