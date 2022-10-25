@@ -4,70 +4,139 @@
 #include <format>
 #include <optional>
 #include <fstream>
+#include <span>
 
 
 namespace cheap
 {
+
+   struct cheap_exception final : std::runtime_error
+   {
+      using runtime_error::runtime_error;
+   };
+
+   struct bool_attribute {
+      bool m_value = true; // TODO: setting this to false
+      std::string m_name;
+   };
+   struct string_attribute {
+      std::string m_name;
+      std::string m_data;
+   };
+   using attribute = std::variant<bool_attribute, string_attribute>;
+
    namespace detail
    {
-      struct global_boolean_attribute
+      constexpr auto get_attribute_name(const attribute& attrib) -> std::string
       {
-         bool m_value = true;
-      };
+         return std::visit(
+            [](const auto& alternative) {return alternative.m_name; },
+            attrib
+         );
+      }
 
-      struct global_string_attribute
+
+      constexpr auto is_in(std::span<const std::string_view> choices, const std::string& value) -> bool
       {
-         std::string m_value;
-      };
+         for (const auto& test : choices)
+         {
+            if (test == value)
+               return true;
+         }
+         return false;
+      }
 
-      template<typename T>
-      struct global_enumerated_attribute
+
+      template<typename target_type>
+      auto assert_attribute_type(const attribute& attrib) -> void
       {
-         using enum_type = T;
-         T m_value;
-         explicit global_enumerated_attribute(const T initial) : m_value(initial) {}
-      };
+         if(std::holds_alternative<target_type>(attrib) == false)
+         {
+            const std::string target_type_str = std::same_as<target_type, bool_attribute> ? "bool attribute" : "string attribute";
+            throw cheap_exception{std::format("Attribute {} must be a {}. It's not!", get_attribute_name(attrib), target_type_str)};
+         }
+      }
 
-      template<typename T>
-      concept boolean_attribute_c = std::derived_from<T, global_boolean_attribute>;
-      template<typename T>
-      concept string_attribute_c = std::derived_from<T, global_string_attribute>;
-      template<typename T, typename state = typename T::enum_type>
-      concept enumeration_attribute_c = std::derived_from<T, global_enumerated_attribute<state>>;
+
+      auto assert_enum_choice(const string_attribute& attrib, std::span<const std::string_view> choices) -> void
+      {
+         if(is_in(choices, attrib.m_data) == false)
+         {
+            std::string choices_str;
+            for(int i=0; i<std::size(choices); ++i)
+            {
+               if(i>0)
+               {
+                  choices_str += ", ";
+               }
+               choices_str += choices[i];
+            }
+            throw cheap_exception{ std::format("Attribute is an enum. It must be one of [{}]. But it's {}!", choices_str, attrib.m_data) };
+         }
+      }
+
+
+      constexpr auto assert_attrib_valid(const attribute& attrib) -> bool
+      {
+         // Check if global boolean attributes are used correctly
+         constexpr std::string_view bool_list[] = { "autofocus", "hidden", "itemscope" };
+         const auto attrib_name = get_attribute_name(attrib);
+         if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
+         {
+            throw cheap_exception{ std::format("{} attribute must be bool. It is not!", attrib_name)};
+         }
+
+         // Check if global enumerated attributes are used correctly
+         if(attrib_name == "autocapitalize")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "off", "on", "sentences", "words", "characters"};
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
+         else if (attrib_name == "contenteditable")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "true", "false" };
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
+         else if (attrib_name == "dir")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "ltr", "rtl", "auto"};
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
+
+         return true;
+      }
    }
 
-   // Attribite list from https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes
-   struct autofocus : detail::global_boolean_attribute { };
-   struct accesskey : detail::global_string_attribute { };
-   enum class autocapitalize_state{off, on, sentences, words, characters};
-   struct autocapitalize : detail::global_enumerated_attribute<autocapitalize_state>{ using global_enumerated_attribute::global_enumerated_attribute; };
-   enum class true_false_state { true_, false_ };
-   struct contenteditable : detail::global_enumerated_attribute<true_false_state> { using global_enumerated_attribute::global_enumerated_attribute; };
-   enum class dir_state { ltr, rtl, auto_ };
-   struct dir : detail::global_enumerated_attribute<dir_state> { using global_enumerated_attribute::global_enumerated_attribute; };
-   struct draggable : detail::global_enumerated_attribute<true_false_state> { using global_enumerated_attribute::global_enumerated_attribute; };
-   enum class enterkeyhint_state { enter, done, go, next, previous, search, send };
-   struct enterkeyhint : detail::global_enumerated_attribute<enterkeyhint_state> { using global_enumerated_attribute::global_enumerated_attribute; };
-   struct hidden : detail::global_boolean_attribute { };
-   struct id : detail::global_string_attribute { };
-   enum class inputmode_state{ none, text, decimal, numeric, tel, search, email, url };
-   struct inputmode : detail::global_enumerated_attribute<inputmode_state> { using global_enumerated_attribute::global_enumerated_attribute; };
-   struct is : detail::global_string_attribute { };
-   struct itemid : detail::global_string_attribute { };
-   struct itemref : detail::global_string_attribute { };
-   struct itemscope : detail::global_boolean_attribute { };
-   struct itemtype : detail::global_string_attribute { };
-
-   struct arbitrary_attribute {
-      std::string m_name;
-      std::string m_data;
-   };
-   struct data_attribute{
-      std::string m_name;
-      std::string m_data;
-   };
-
-   using attribute = std::variant<arbitrary_attribute, data_attribute, autofocus, accesskey, autocapitalize, contenteditable, dir, draggable, enterkeyhint, hidden, id, inputmode, is, itemid, itemref, itemscope, itemtype>;
+   auto operator "" _batt(const char* c_str, std::size_t size) -> bool_attribute
+   {
+      std::string str(c_str);
+      const auto equal_pos = str.find('=');
+      if (equal_pos != std::string::npos)
+      {
+         std::terminate();
+      }
+      bool_attribute result{ .m_name = str };
+      detail::assert_attrib_valid(result);
+      return result;
+   }
+   auto operator "" _att(const char* c_str, std::size_t size) -> string_attribute
+   {
+      std::string str(c_str);
+      const auto equal_pos = str.find('=');
+      if(equal_pos == std::string::npos)
+      {
+         std::terminate();
+      }
+      string_attribute result{
+         .m_name = str.substr(0, equal_pos),
+         .m_data = str.substr(equal_pos+1)
+      };
+      detail::assert_attrib_valid(result);
+      return result;
+   }
 
    struct element;
    using content = std::variant<element, std::string>;
@@ -351,132 +420,40 @@ namespace cheap
 
    namespace detail
    {
-      template<typename T>
-      struct attribute_name { };
-      template<> struct attribute_name<autofocus> { constexpr static inline std::string_view value = "autofocus"; };
-      template<> struct attribute_name<accesskey> { constexpr static inline std::string_view value = "accesskey"; };
-      template<> struct attribute_name<autocapitalize> { constexpr static inline std::string_view value = "autocapitalize"; };
-      template<> struct attribute_name<contenteditable> { constexpr static inline std::string_view value = "contenteditable"; };
-      template<> struct attribute_name<dir> { constexpr static inline std::string_view value = "dir"; };
-      template<> struct attribute_name<draggable> { constexpr static inline std::string_view value = "draggable"; };
-      template<> struct attribute_name<enterkeyhint> { constexpr static inline std::string_view value = "enterkeyhint"; };
-      template<> struct attribute_name<hidden> { constexpr static inline std::string_view value = "hidden"; };
-      template<> struct attribute_name<id> { constexpr static inline std::string_view value = "id"; };
-      template<> struct attribute_name<inputmode> { constexpr static inline std::string_view value = "inputmode"; };
-      template<> struct attribute_name<is> { constexpr static inline std::string_view value = "is"; };
-      template<> struct attribute_name<itemid> { constexpr static inline std::string_view value = "itemid"; };
-      template<> struct attribute_name<itemref> { constexpr static inline std::string_view value = "itemref"; };
-      template<> struct attribute_name<itemscope> { constexpr static inline std::string_view value = "itemscope"; };
-      template<> struct attribute_name<itemtype> { constexpr static inline std::string_view value = "itemtype"; };
-      template<typename T> constexpr inline static std::string_view attribute_name_v = attribute_name<T>::value;
 
-      [[nodiscard]] auto to_string(const autocapitalize_state& state) -> std::string
+      [[nodiscard]] auto to_string(const attribute& attrib) -> std::string
       {
-         switch (state)
+         const auto visitor = []<typename T>(const T& alternative) -> std::string
          {
-         case autocapitalize_state::off: return "off";
-         case autocapitalize_state::on: return "on";
-         case autocapitalize_state::sentences: return "sentences";
-         case autocapitalize_state::words: return "words";
-         case autocapitalize_state::characters: return "characters";
-         }
-         std::terminate();
-      }
-      [[nodiscard]] auto to_string(const true_false_state& state) -> std::string
-      {
-         switch (state)
-         {
-         case true_false_state::true_: return "true";
-         case true_false_state::false_: return "false";
-         }
-         std::terminate();
-      }
-      [[nodiscard]] auto to_string(const dir_state& state) -> std::string
-      {
-         switch (state)
-         {
-         case dir_state::ltr: return "ltr";
-         case dir_state::rtl: return "rtl";
-         case dir_state::auto_: return "auto";
-         }
-         std::terminate();
-      }
-      [[nodiscard]] auto to_string(const enterkeyhint_state& state) -> std::string
-      {
-         switch (state)
-         {
-         case enterkeyhint_state::enter: return "enter";
-         case enterkeyhint_state::done: return "done";
-         case enterkeyhint_state::go: return "go";
-         case enterkeyhint_state::next: return "next";
-         case enterkeyhint_state::previous: return "previous";
-         case enterkeyhint_state::search: return "search";
-         case enterkeyhint_state::send: return "send";
-         }
-         std::terminate();
-      }
-      [[nodiscard]] auto to_string(const inputmode_state& state) -> std::string
-      {
-         switch (state)
-         {
-         case inputmode_state::none: return "none";
-         case inputmode_state::text: return "text";
-         case inputmode_state::decimal: return "decimal";
-         case inputmode_state::numeric: return "numeric";
-         case inputmode_state::tel: return "tel";
-         case inputmode_state::search: return "search";
-         case inputmode_state::email: return "email";
-         case inputmode_state::url: return "url";
-         }
-         std::terminate();
-      }
-
-      template<boolean_attribute_c bool_attrib_type>
-      [[nodiscard]] auto to_string(const bool_attrib_type& attrib) -> std::string
-      {
-         // The presence of a boolean attribute on an element represents the true
-         // value, and the absence of the attribute represents the false value.
-         // [...]]
-         // The values "true" and "false" are not allowed on boolean attributes.
-         // To represent a false value, the attribute has to be omitted altogether.
-         // [https://html.spec.whatwg.org/dev/common-microsyntaxes.html#boolean-attributes]
-         return attrib.m_value ? std::string{ attribute_name_v<bool_attrib_type> } : "";
+            if constexpr(std::same_as<T, bool_attribute>)
+            {
+               // The presence of a boolean string_attribute on an element represents the true
+               // value, and the absence of the string_attribute represents the false value.
+               // [...]]
+               // The values "true" and "false" are not allowed on boolean attributes.
+               // To represent a false value, the string_attribute has to be omitted altogether.
+               // [https://html.spec.whatwg.org/dev/common-microsyntaxes.html#boolean-attributes]
+               if (alternative.m_value == false)
+                  return {};
+               return alternative.m_name;
+            }
+            else if constexpr (std::same_as<T, string_attribute>)
+            {
+               return std::format("{}=\"{}\"", alternative.m_name, alternative.m_data);
+            }
+         };
+         return std::visit(visitor, attrib);
       }
 
 
-      template<string_attribute_c string_attribute_type>
-      [[nodiscard]] auto to_string(const string_attribute_type& attrib) -> std::string
-      {
-         return std::format("{}=\"{}\"", attribute_name_v<string_attribute_type>, attrib.m_value);
-      }
-
-
-      template<enumeration_attribute_c enum_attrib_type>
-      [[nodiscard]] auto to_string(const enum_attrib_type& attrib) -> std::string
-      {
-         return std::format("{}=\"{}\"", attribute_name_v<enum_attrib_type>, to_string(attrib.m_value));
-      }
-
-
-      [[nodiscard]] auto to_string(const arbitrary_attribute& attrib) -> std::string
-      {
-         return std::format("{}=\"{}\"", attrib.m_name, attrib.m_data);
-      }
-
-      [[nodiscard]] auto to_string(const data_attribute& attrib) -> std::string
-      {
-         return std::format("data-{}=\"{}\"", attrib.m_name, attrib.m_data);
-      }
-
-
-      [[nodiscard]] auto to_string(const std::vector<attribute>& attributes) -> std::string
+      [[nodiscard]] auto to_string(const std::vector<string_attribute>& attributes) -> std::string
       {
          std::string result;
 
          const auto visitor = [](const auto& alternative) { return to_string(alternative); };
          for (const auto& attribute : attributes)
          {
-            result += std::format(" {}", std::visit(visitor, attribute));
+            result += std::format(" {}={}", attribute.m_name, attribute.m_data);
          }
          return result;
       }
@@ -484,11 +461,25 @@ namespace cheap
 
       [[nodiscard]] auto get_attribute_str(const element& elem) -> std::string
       {
-         const auto visitor = []<typename T>(const T & alternative)
+         
+         const auto visitor = []<typename T>(const T& alternative)
          {
-            return to_string(alternative.m_attributes);
+            return to_string(alternative);
          };
-         return std::visit(visitor, elem);
+
+
+         const auto outer_visitor = [&](const auto& elem_alternative)
+         {
+            std::string result;
+            for (const auto& x : elem_alternative.m_attributes)
+            {
+               result += ' ';
+               result += std::visit(visitor, x);
+            }
+            return result;
+         };
+         
+         return std::visit(outer_visitor, elem);
       }
 
 
@@ -543,7 +534,7 @@ namespace cheap
 
          return std::visit(outer_visitor, variant);
       }
-   }
+   } // namespace detail
 
 
    [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string
@@ -551,9 +542,10 @@ namespace cheap
       if(const auto x = elem.get_trivial_content(); x.has_value())
       {
          return std::format(
-            "{}<{}>{}</{}>",
+            "{}<{}{}>{}</{}>",
             detail::get_spaces(level * detail::indent),
             elem.get_element_name(),
+            detail::get_attribute_str(elem),
             x.value(),
             elem.get_element_name()
          );
@@ -561,7 +553,7 @@ namespace cheap
       else
       {
          std::string result;
-         result += std::format("<{}>", elem.get_element_name());
+         result += std::format("<{}{}>", elem.get_element_name(), detail::get_attribute_str(elem));
          result += '\n';
          result += detail::get_inner_html_str(elem, level);
          result += '\n';
@@ -602,27 +594,15 @@ auto test(const std::string& a, const std::string& b) -> void
 
 int main()
 {
-   // cheap::
-
    using namespace cheap;
 
-   // "abc"_att;
-
-   // const std::string x = std::format("{: >{}}", "", 5);
-
-   test(to_string(autofocus{ false }), "");
-   test(to_string(autofocus{ true }), "autofocus");
-   test(to_string(autofocus{}), "autofocus");
-
-   test(to_string(accesskey{ "A" }), "accesskey=\"A\"");
-   test(to_string(accesskey{}), "accesskey=\"\"");
-
-   test(to_string(std::vector<attribute>{}), "");
-   test(to_string(std::vector<attribute>{autofocus{}, autocapitalize{autocapitalize_state::off}}), " autofocus autocapitalize=\"off\"");
+   const auto att0 = "x=y"_att;
+   const auto att1 = "x"_batt;
    
    arbitrary_element sub{ .m_type = "span", .m_inner_html = {"content0"} };
    span s0{ .m_inner_html = {""}};
    cheap::div main{
+      .m_attributes= {"hidden=b"_att, "doit"_batt},
       .m_inner_html = {"content0", sub, s0}
    };
    const auto str = get_element_str(main);
