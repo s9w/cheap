@@ -1,11 +1,10 @@
 # **cheap** (C++ HTML Element Apparator) :heavy_dollar_sign::heavy_dollar_sign::heavy_dollar_sign:
 
-**cheap** creates html string from C++. TL;DR:
+**cheap** is a C++ library to create html string. TL;DR:
 ```c++
 const std::string elem_str = get_element_str(div(span("first"), img("src=test.jpg"_att)));
 ```
-
-:arrow_double_down: :arrow_double_down:
+:arrow_double_down: output: :arrow_double_down:
 
 ```html
 <div>
@@ -96,7 +95,7 @@ element elem{ "div", {"cool=true"_att},
 Also feel free to just set the members yourself (everything is public).
 
 ## Parallel elements
-Note that there's also an overload that accepts multiple elements. It gets rendered just as you would expect.
+There's also an overload that accepts a vector of elements. It gets rendered just as you would expect.
 ```c++
 auto get_element_str(const element& elem,                  const int indentation = 4) -> std::string;
 auto get_element_str(const std::vector<element>& elements, const int indentation = 4) -> std::string;
@@ -114,7 +113,7 @@ const std::string elem_str = get_element_str(
 ## Performance; string ref output
 I did some rudimentary profiling and things are still fast with a million elements. The first pain points are allocations of the vectors etc.
 
-To alleviate memory allocation worries at least to some degree, there's an alternative set of stringification functions that wrote into a `std::string&`. That target string can be preallocated by the user, or re-used between changes to avoid most string allocations.
+To alleviate memory allocation worries at least to some degree, there's an alternative set of stringification functions that write into a `std::string&`. That target string can be preallocated by the user, or re-used between changes to avoid most string allocations.
 
 ```c++
 auto write_element_str(const element& elem,                  std::string& output, const int indentation = 4) -> void;

@@ -29,7 +29,7 @@ namespace cheap
    static_assert(std::is_aggregate_v<string_attribute>);
    using attribute = std::variant<bool_attribute, string_attribute>;
 
-   auto operator ""_att(const char* c_str, const std::size_t size) -> attribute;
+   auto operator ""_att(const char* c_str, const std::size_t) -> attribute;
 
    struct element;
    using content = std::variant<element, std::string>;
@@ -377,7 +377,7 @@ auto cheap::element::is_self_closing() const -> bool
    return detail::is_in(void_elem_list, m_type);
 }
 
-auto cheap::operator "" _att(const char* c_str, std::size_t size) -> attribute
+auto cheap::operator ""_att(const char* c_str, std::size_t) -> attribute
 {
    std::string str(c_str);
    const auto equal_pos = str.find('=');

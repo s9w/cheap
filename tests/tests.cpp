@@ -1,9 +1,9 @@
 #include <fstream>
 
-#define FMT_HEADER_ONLY
-#include <fmt/format.h>
+// #define FMT_HEADER_ONLY
+// #include <fmt/format.h>
 
-#define CHEAP_USE_FMT
+// #define CHEAP_USE_FMT
 #define CHEAP_IMPL
 #include "../cheap.h"
 
@@ -38,15 +38,15 @@ TEST_CASE("get_element_str()") {
    }
 }
 
-TEST_CASE("playground"){
-   const std::string elem_str = get_element_str(
-      { img("src=a.jpg"_att), img("src=b.jpg"_att) }
-   );
-   // const std::string elem_str = get_element_str(div(span("first"), img("src=test.jpg"_att)));
-   std::ofstream file_out("test.html");
-   // file_out << get_element_str(elem);
-   file_out << elem_str;
-}
+// TEST_CASE("playground"){
+//    const std::string elem_str = get_element_str(
+//       { img("src=a.jpg"_att), img("src=b.jpg"_att) }
+//    );
+//    std::ofstream file_out("test.html");
+//    file_out << elem_str;
+// }
+
+
 
 // int main()
 // {
