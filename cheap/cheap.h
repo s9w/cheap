@@ -1,7 +1,7 @@
 // ReSharper disable CppNonInlineFunctionDefinitionInHeaderFile
 #pragma once
 
-#include <exception>
+#include <stdexcept>
 #include <span>
 #include <string>
 #include <variant>
