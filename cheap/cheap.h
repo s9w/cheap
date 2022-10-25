@@ -37,8 +37,8 @@ namespace cheap
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
       
-      explicit element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html);
-      explicit element(const std::string_view name, const std::vector<content>& inner_html);
+      explicit element(const std::string_view name, std::vector<attribute> attributes, std::vector<content> inner_html);
+      explicit element(const std::string_view name, std::vector<content> inner_html);
       explicit element(const std::string_view name);
       [[nodiscard]] auto is_trivial() const -> bool;
       [[nodiscard]] auto get_trivial() const -> std::string;
@@ -323,15 +323,15 @@ auto cheap::get_element_str(
 
 cheap::element::element(
    const std::string_view name,
-   const std::vector<attribute>& attributes,
-   const std::vector<content>& inner_html
+   std::vector<attribute> attributes,
+   std::vector<content> inner_html
 )
    : m_type(name)
-   , m_attributes(attributes)
-   , m_inner_html(inner_html)
+   , m_attributes(std::move(attributes))
+   , m_inner_html(std::move(inner_html))
 { }
-cheap::element::element(const std::string_view name, const std::vector<content>& inner_html)
-   : element(name, {}, inner_html)
+cheap::element::element(const std::string_view name, std::vector<content> inner_html)
+   : element(name, {}, std::move(inner_html))
 { }
 cheap::element::element(const std::string_view name)
    : element(name, {}, {})
