@@ -1,8 +1,8 @@
 // ReSharper disable CppNonInlineFunctionDefinitionInHeaderFile
 #pragma once
 
-#include <stdexcept>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
@@ -42,6 +42,7 @@ namespace cheap
       explicit element(const std::string_view name);
       [[nodiscard]] auto is_trivial() const -> bool;
       [[nodiscard]] auto get_trivial() const -> std::string;
+      [[nodiscard]] auto is_self_closing() const -> bool;
 
    private:
       explicit element() = default;
@@ -53,116 +54,117 @@ namespace cheap
    template<typename ... Ts>
    [[nodiscard]] auto create_element(Ts&&... args) -> element;
 
-   template<typename ... Ts> auto html(Ts&&... args) -> element { return create_element("html", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto base(Ts&&... args) -> element { return create_element("base", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto head(Ts&&... args) -> element { return create_element("head", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto link(Ts&&... args) -> element { return create_element("link", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto meta(Ts&&... args) -> element { return create_element("meta", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto style(Ts&&... args) -> element { return create_element("style", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto title(Ts&&... args) -> element { return create_element("title", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto body(Ts&&... args) -> element { return create_element("body", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto a(Ts&&... args) -> element { return create_element("a", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto abbr(Ts&&... args) -> element { return create_element("abbr", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto address(Ts&&... args) -> element { return create_element("address", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto area(Ts&&... args) -> element { return create_element("area", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto article(Ts&&... args) -> element { return create_element("article", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto aside(Ts&&... args) -> element { return create_element("aside", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto audio(Ts&&... args) -> element { return create_element("audio", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto b(Ts&&... args) -> element { return create_element("b", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto br(Ts&&... args) -> element { return create_element("br", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto base(Ts&&... args) -> element { return create_element("base", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto bdi(Ts&&... args) -> element { return create_element("bdi", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto bdo(Ts&&... args) -> element { return create_element("bdo", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto blockquote(Ts&&... args) -> element { return create_element("blockquote", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto body(Ts&&... args) -> element { return create_element("body", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto button(Ts&&... args) -> element { return create_element("button", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto canvas(Ts&&... args) -> element { return create_element("canvas", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto caption(Ts&&... args) -> element { return create_element("caption", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto cite(Ts&&... args) -> element { return create_element("cite", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto code(Ts&&... args) -> element { return create_element("code", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto col(Ts&&... args) -> element { return create_element("col", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto colgroup(Ts&&... args) -> element { return create_element("colgroup", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto data(Ts&&... args) -> element { return create_element("data", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto datalist(Ts&&... args) -> element { return create_element("datalist", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto dd(Ts&&... args) -> element { return create_element("dd", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto del(Ts&&... args) -> element { return create_element("del", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto details(Ts&&... args) -> element { return create_element("details", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto dfn(Ts&&... args) -> element { return create_element("dfn", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto dialog(Ts&&... args) -> element { return create_element("dialog", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto div(Ts&&... args) -> element { return create_element("div", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto dl(Ts&&... args) -> element { return create_element("dl", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto dt(Ts&&... args) -> element { return create_element("dt", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto em(Ts&&... args) -> element { return create_element("em", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto embed(Ts&&... args) -> element { return create_element("embed", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto fieldset(Ts&&... args) -> element { return create_element("fieldset", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto figcaption(Ts&&... args) -> element { return create_element("figcaption", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto figure(Ts&&... args) -> element { return create_element("figure", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto footer(Ts&&... args) -> element { return create_element("footer", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto header(Ts&&... args) -> element { return create_element("header", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto form(Ts&&... args) -> element { return create_element("form", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h1(Ts&&... args) -> element { return create_element("h1", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h2(Ts&&... args) -> element { return create_element("h2", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h3(Ts&&... args) -> element { return create_element("h3", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h4(Ts&&... args) -> element { return create_element("h4", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h5(Ts&&... args) -> element { return create_element("h5", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto h6(Ts&&... args) -> element { return create_element("h6", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto main(Ts&&... args) -> element { return create_element("main", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto nav(Ts&&... args) -> element { return create_element("nav", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto section(Ts&&... args) -> element { return create_element("section", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto blockquote(Ts&&... args) -> element { return create_element("blockquote", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto dd(Ts&&... args) -> element { return create_element("dd", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto div(Ts&&... args) -> element { return create_element("div", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto dl(Ts&&... args) -> element { return create_element("dl", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto dt(Ts&&... args) -> element { return create_element("dt", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto figcaption(Ts&&... args) -> element { return create_element("figcaption", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto figure(Ts&&... args) -> element { return create_element("figure", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto head(Ts&&... args) -> element { return create_element("head", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto header(Ts&&... args) -> element { return create_element("header", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto hr(Ts&&... args) -> element { return create_element("hr", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto menu(Ts&&... args) -> element { return create_element("menu", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto ol(Ts&&... args) -> element { return create_element("ol", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto p(Ts&&... args) -> element { return create_element("p", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto pre(Ts&&... args) -> element { return create_element("pre", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto ul(Ts&&... args) -> element { return create_element("ul", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto a(Ts&&... args) -> element { return create_element("a", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto abbr(Ts&&... args) -> element { return create_element("abbr", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto b(Ts&&... args) -> element { return create_element("b", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto bdi(Ts&&... args) -> element { return create_element("bdi", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto bdo(Ts&&... args) -> element { return create_element("bdo", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto cite(Ts&&... args) -> element { return create_element("cite", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto code(Ts&&... args) -> element { return create_element("code", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto data(Ts&&... args) -> element { return create_element("data", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto dfn(Ts&&... args) -> element { return create_element("dfn", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto em(Ts&&... args) -> element { return create_element("em", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto html(Ts&&... args) -> element { return create_element("html", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto i(Ts&&... args) -> element { return create_element("i", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto iframe(Ts&&... args) -> element { return create_element("iframe", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto img(Ts&&... args) -> element { return create_element("img", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto input(Ts&&... args) -> element { return create_element("input", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto ins(Ts&&... args) -> element { return create_element("ins", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto kdb(Ts&&... args) -> element { return create_element("kdb", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto label(Ts&&... args) -> element { return create_element("label", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto legend(Ts&&... args) -> element { return create_element("legend", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto link(Ts&&... args) -> element { return create_element("link", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto main(Ts&&... args) -> element { return create_element("main", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto map(Ts&&... args) -> element { return create_element("map", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto mark(Ts&&... args) -> element { return create_element("mark", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto math(Ts&&... args) -> element { return create_element("math", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto menu(Ts&&... args) -> element { return create_element("menu", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto meta(Ts&&... args) -> element { return create_element("meta", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto meter(Ts&&... args) -> element { return create_element("meter", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto nav(Ts&&... args) -> element { return create_element("nav", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto noscript(Ts&&... args) -> element { return create_element("noscript", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto object(Ts&&... args) -> element { return create_element("object", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto ol(Ts&&... args) -> element { return create_element("ol", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto optgroup(Ts&&... args) -> element { return create_element("optgroup", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto option(Ts&&... args) -> element { return create_element("option", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto p(Ts&&... args) -> element { return create_element("p", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto picture(Ts&&... args) -> element { return create_element("picture", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto portal(Ts&&... args) -> element { return create_element("portal", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto pre(Ts&&... args) -> element { return create_element("pre", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto progress(Ts&&... args) -> element { return create_element("progress", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto q(Ts&&... args) -> element { return create_element("q", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto rp(Ts&&... args) -> element { return create_element("rp", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto rt(Ts&&... args) -> element { return create_element("rt", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto ruby(Ts&&... args) -> element { return create_element("ruby", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto s(Ts&&... args) -> element { return create_element("s", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto samp(Ts&&... args) -> element { return create_element("samp", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto small(Ts&&... args) -> element { return create_element("small", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto span(Ts&&... args) -> element { return create_element("span", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto strong(Ts&&... args) -> element { return create_element("strong", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto sub(Ts&&... args) -> element { return create_element("sub", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto sup(Ts&&... args) -> element { return create_element("sup", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto time(Ts&&... args) -> element { return create_element("time", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto u(Ts&&... args) -> element { return create_element("u", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto var(Ts&&... args) -> element { return create_element("var", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto wbr(Ts&&... args) -> element { return create_element("wbr", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto area(Ts&&... args) -> element { return create_element("area", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto audio(Ts&&... args) -> element { return create_element("audio", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto img(Ts&&... args) -> element { return create_element("img", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto map(Ts&&... args) -> element { return create_element("map", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto track(Ts&&... args) -> element { return create_element("track", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto video(Ts&&... args) -> element { return create_element("video", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto embed(Ts&&... args) -> element { return create_element("embed", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto iframe(Ts&&... args) -> element { return create_element("iframe", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto object(Ts&&... args) -> element { return create_element("object", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto picture(Ts&&... args) -> element { return create_element("picture", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto portal(Ts&&... args) -> element { return create_element("portal", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto source(Ts&&... args) -> element { return create_element("source", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto svg(Ts&&... args) -> element { return create_element("svg", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto math(Ts&&... args) -> element { return create_element("math", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto canvas(Ts&&... args) -> element { return create_element("canvas", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto noscript(Ts&&... args) -> element { return create_element("noscript", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto script(Ts&&... args) -> element { return create_element("script", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto del(Ts&&... args) -> element { return create_element("del", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto ins(Ts&&... args) -> element { return create_element("ins", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto caption(Ts&&... args) -> element { return create_element("caption", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto col(Ts&&... args) -> element { return create_element("col", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto colgroup(Ts&&... args) -> element { return create_element("colgroup", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto section(Ts&&... args) -> element { return create_element("section", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto select(Ts&&... args) -> element { return create_element("select", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto slot(Ts&&... args) -> element { return create_element("slot", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto small(Ts&&... args) -> element { return create_element("small", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto source(Ts&&... args) -> element { return create_element("source", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto span(Ts&&... args) -> element { return create_element("span", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto stable(Ts&&... args) -> element { return create_element("stable", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto strong(Ts&&... args) -> element { return create_element("strong", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto style(Ts&&... args) -> element { return create_element("style", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto sub(Ts&&... args) -> element { return create_element("sub", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto summary(Ts&&... args) -> element { return create_element("summary", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto sup(Ts&&... args) -> element { return create_element("sup", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto svg(Ts&&... args) -> element { return create_element("svg", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto tbody(Ts&&... args) -> element { return create_element("tbody", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto td(Ts&&... args) -> element { return create_element("td", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto template_(Ts&&... args) -> element { return create_element("template", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto textarea(Ts&&... args) -> element { return create_element("textarea", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto tfoot(Ts&&... args) -> element { return create_element("tfoot", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto th(Ts&&... args) -> element { return create_element("th", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto thead(Ts&&... args) -> element { return create_element("thead", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto time(Ts&&... args) -> element { return create_element("time", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto title(Ts&&... args) -> element { return create_element("title", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto tr(Ts&&... args) -> element { return create_element("tr", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto button(Ts&&... args) -> element { return create_element("button", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto datalist(Ts&&... args) -> element { return create_element("datalist", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto fieldset(Ts&&... args) -> element { return create_element("fieldset", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto form(Ts&&... args) -> element { return create_element("form", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto input(Ts&&... args) -> element { return create_element("input", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto label(Ts&&... args) -> element { return create_element("label", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto legend(Ts&&... args) -> element { return create_element("legend", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto meter(Ts&&... args) -> element { return create_element("meter", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto optgroup(Ts&&... args) -> element { return create_element("optgroup", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto option(Ts&&... args) -> element { return create_element("option", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto progress(Ts&&... args) -> element { return create_element("progress", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto select(Ts&&... args) -> element { return create_element("select", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto textarea(Ts&&... args) -> element { return create_element("textarea", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto details(Ts&&... args) -> element { return create_element("details", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto dialog(Ts&&... args) -> element { return create_element("dialog", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto summary(Ts&&... args) -> element { return create_element("summary", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto slot(Ts&&... args) -> element { return create_element("slot", std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto template_(Ts&&... args) -> element { return create_element("template", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto track(Ts&&... args) -> element { return create_element("track", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto u(Ts&&... args) -> element { return create_element("u", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto ul(Ts&&... args) -> element { return create_element("ul", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto var(Ts&&... args) -> element { return create_element("var", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto video(Ts&&... args) -> element { return create_element("video", std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto wbr(Ts&&... args) -> element { return create_element("wbr", std::forward<Ts>(args)...); }
 
    [[nodiscard]] auto get_element_str(const element& elem, const int indentation = 4) -> std::string;
 } // namespace cheap
@@ -342,11 +344,18 @@ auto cheap::element::is_trivial() const -> bool
 
    return m_inner_html.size() == 1 && std::holds_alternative<std::string>(m_inner_html.front());
 }
+
 auto cheap::element::get_trivial() const -> std::string
 {
    if (m_inner_html.empty())
       return "";
    return std::get<std::string>(m_inner_html.front());
+}
+
+auto cheap::element::is_self_closing() const -> bool
+{
+   constexpr std::string_view void_elem_list[] = { "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr" };
+   return detail::is_in(void_elem_list, m_type);
 }
 
 auto cheap::operator "" _att(const char* c_str, std::size_t size) -> attribute
@@ -498,7 +507,21 @@ auto cheap::detail::get_element_str_impl(
    const int current_level
 ) -> std::string
 {
-   if(elem.is_trivial())
+   if(elem.is_self_closing())
+   {
+      if(elem.m_inner_html.empty() == false)
+      {
+         throw cheap_exception{CHEAP_FORMAT("The used element (\"{}\") is self-closing and can't have children", elem.m_type)};
+      }
+
+      return CHEAP_FORMAT(
+         "{}<{}{} />",
+         detail::get_spaces(current_level * indentation),
+         elem.m_type,
+         detail::get_attribute_str(elem)
+      );
+   }
+   else if(elem.is_trivial())
    {
       return CHEAP_FORMAT(
          "{}<{}{}>{}</{}>",
