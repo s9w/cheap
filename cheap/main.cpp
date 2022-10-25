@@ -1,46 +1,37 @@
-#include <fstream>
+// #include <fstream>
 
 #include "cheap.h"
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
 
-auto test(const bool value) -> void
-{
-   if (value == false)
-      std::terminate();
-}
+using namespace cheap;
 
-auto test(const std::string& a, const std::string& b) -> void
-{
-   if (a != b)
-   {
-      int i = 0;
-      while(true)
-      {
-         if (std::string{ a[i] } != std::string{ b[i] })
-            std::terminate();
-      }
-      std::terminate();
-   }
+TEST_CASE("attributes") {
+   CHECK(std::holds_alternative<bool_attribute>("xxx"_att));
+   CHECK(std::holds_alternative<string_attribute>("xxx=yyy"_att));
+   CHECK_THROWS_AS("hidden=xxx"_att, cheap_exception);
+   CHECK_THROWS_AS("autocapitalize=xxx"_att, cheap_exception);
 }
 
 
-int main()
-{
-   using namespace cheap;
-
-   const auto att0 = "x=y"_att;
-   const auto att1 = "x"_batt;
-   
-   arbitrary_element sub{ .m_type = "span", .m_inner_html = {"content0"} };
-   span s0{ .m_inner_html = {""}};
-   cheap::div main{
-      .m_attributes= {"hidden=b"_att, "doit"_batt},
-      .m_inner_html = {"content0", sub, s0}
-   };
-   const auto str = get_element_str(main);
-
-   std::ofstream file_out("test.html");
-   file_out << str;
-
-   return 0;
-}
+// int main()
+// {
+//    using namespace cheap;
+//
+//    const auto att0 = "x=y"_att;
+//    const auto att1 = "x"_batt;
+//    
+//    arbitrary_element sub{ .m_type = "span", .m_inner_html = {"content0"} };
+//    span s0{ .m_inner_html = {""}};
+//    cheap::div main{
+//       .m_attributes= {"hidden=b"_att, "doit"_batt},
+//       .m_inner_html = {"content0", sub, s0}
+//    };
+//    const auto str = get_element_str(main);
+//
+//    std::ofstream file_out("test.html");
+//    file_out << str;
+//
+//    return 0;
+// }

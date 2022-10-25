@@ -78,7 +78,7 @@ namespace cheap
       }
 
 
-      constexpr auto assert_attrib_valid(const attribute& attrib) -> bool
+      constexpr auto assert_attrib_valid(const attribute& attrib) -> void
       {
          // Check if global boolean attributes are used correctly
          constexpr std::string_view bool_list[] = { "autofocus", "hidden", "itemscope" };
@@ -87,6 +87,8 @@ namespace cheap
          {
             throw cheap_exception{ std::format("{} attribute must be bool. It is not!", attrib_name) };
          }
+
+         // TODO: string list (id etc)
 
          // Check if global enumerated attributes are used correctly
          if (attrib_name == "autocapitalize")
@@ -107,35 +109,44 @@ namespace cheap
             constexpr std::string_view valid_list[] = { "ltr", "rtl", "auto" };
             assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
          }
-
-         return true;
+         else if (attrib_name == "draggable")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "true", "false" };
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
+         else if (attrib_name == "enterkeyhint")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "enter", "done", "go", "next", "previous", "search", "send" };
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
+         else if (attrib_name == "inputmode")
+         {
+            assert_attribute_type<string_attribute>(attrib);
+            constexpr std::string_view valid_list[] = { "none", "text", "decimal", "numeric", "tel", "search", "email", "url" };
+            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+         }
       }
    }
 
-   auto operator "" _batt(const char* c_str, std::size_t size) -> bool_attribute
+
+   auto operator "" _att(const char* c_str, std::size_t size) -> attribute
    {
       std::string str(c_str);
       const auto equal_pos = str.find('=');
-      if (equal_pos != std::string::npos)
-      {
-         std::terminate();
-      }
-      bool_attribute result{ .m_name = str };
-      detail::assert_attrib_valid(result);
-      return result;
-   }
-   auto operator "" _att(const char* c_str, std::size_t size) -> string_attribute
-   {
-      std::string str(c_str);
-      const auto equal_pos = str.find('=');
+      attribute result;
       if (equal_pos == std::string::npos)
       {
-         std::terminate();
+         result = bool_attribute{ .m_name = str };
       }
-      string_attribute result{
-         .m_name = str.substr(0, equal_pos),
-         .m_data = str.substr(equal_pos + 1)
-      };
+      else
+      {
+         result = string_attribute{
+            .m_name = str.substr(0, equal_pos),
+            .m_data = str.substr(equal_pos + 1)
+         };
+      }
       detail::assert_attrib_valid(result);
       return result;
    }
@@ -563,11 +574,5 @@ namespace cheap
          return result;
       }
    }
-
-   // std::string operator "" _att(const char* str, std::size_t)
-   // {
-   //    int stop = 0;
-   //    return "";
-   // }
 
 } // namespace cheap
