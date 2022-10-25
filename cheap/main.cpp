@@ -15,17 +15,17 @@ TEST_CASE("attributes") {
    CHECK_THROWS_AS("autocapitalize=xxx"_att, cheap_exception);
 
    // auto elem = create_element("div", "cool=true"_att, "hallo");
-   // auto elem = div("data-cool=true"_att,
-   //    span("first"),
-   //    span("second")
-   //    );
+   auto elem = div("data-cool=true"_att,
+      span("first"),
+      span("second")
+      );
    
-   element elem{ "div", {"cool=true"_att},
-      {
-         element{"span", {"first"}},
-         element{"span", {"second"}}
-      }
-   };
+   // element elem{ "div", {"cool=true"_att},
+   //    {
+   //       element{"span", {"first"}},
+   //       element{"span", {"second"}}
+   //    }
+   // };
 
    // element x{ "span", "hey" };
    // element elem{ "div", {"cool=true"_att}, element{"span", "hey"} };

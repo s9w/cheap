@@ -126,6 +126,8 @@ namespace cheap
             assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
          }
       }
+
+      // struct internal
    } // namespace detail
 
 
@@ -159,7 +161,7 @@ namespace cheap
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
 
-      explicit element() = default; // TODO: maybe debug tag
+      
       explicit element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html)
          : m_type(name)
          , m_attributes(attributes)
@@ -167,6 +169,9 @@ namespace cheap
       { }
       explicit element(const std::string_view name, const std::vector<content>& inner_html)
          : element(name, {}, inner_html)
+      { }
+      explicit element(const std::string_view name)
+         : element(name, {}, {})
       { }
 
       [[nodiscard]] auto get_trivial() const -> std::optional<std::string>
@@ -177,6 +182,11 @@ namespace cheap
             return std::nullopt;
          return std::get<std::string>(m_inner_html.front());
       }
+
+   private:
+      explicit element() = default;
+      template<typename ... Ts>
+      friend auto create_element(Ts&&... args)->element;
    };
 
 
