@@ -17,7 +17,7 @@ namespace cheap
    struct cheap_exception final : std::runtime_error { using runtime_error::runtime_error; };
 
    struct bool_attribute {
-      bool m_value = true; // TODO: setting this to false
+      bool m_value = true;
       std::string m_name;
    };
    struct string_attribute {
@@ -270,7 +270,7 @@ auto cheap::detail::get_joined_visits(
 template<typename T>
 auto cheap::detail::process(element& result, T&& arg) -> void
 {
-   if constexpr (is_any_of<T, element, attribute, std::string> == false)
+   if constexpr (is_any_of<T, element, attribute, bool_attribute, string_attribute, std::string> == false)
    {
       process(result, std::string{ arg });
    }
@@ -292,7 +292,7 @@ auto cheap::detail::process(element& result, T&& arg) -> void
          result.m_inner_html = { arg };
       }
    }
-   else if constexpr (std::same_as<T, attribute>)
+   else if constexpr (is_any_of<T, attribute, bool_attribute, string_attribute>)
    {
       result.m_attributes.push_back(arg);
    }
@@ -577,11 +577,11 @@ auto cheap::detail::to_string(const attribute& attrib) -> std::string
          // [https://html.spec.whatwg.org/dev/common-microsyntaxes.html#boolean-attributes]
          if (alternative.m_value == false)
             return {};
-         return alternative.m_name;
+         return " " + alternative.m_name;
       }
       else if constexpr (std::same_as<T, string_attribute>)
       {
-         return CHEAP_FORMAT("{}=\"{}\"", alternative.m_name, alternative.m_data);
+         return CHEAP_FORMAT(" {}=\"{}\"", alternative.m_name, alternative.m_data);
       }
    };
    return std::visit(visitor, attrib);
@@ -598,7 +598,6 @@ auto cheap::detail::get_attribute_str(const element& elem) -> std::string
    std::string result;
    for (const auto& x : elem.m_attributes)
    {
-      result += ' ';
       result += std::visit(visitor, x);
    }
    return result;
