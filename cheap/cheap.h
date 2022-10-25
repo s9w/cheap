@@ -1,3 +1,4 @@
+// ReSharper disable CppNonInlineFunctionDefinitionInHeaderFile
 #pragma once
 
 #include <exception>
@@ -169,6 +170,19 @@ namespace cheap::detail
    constexpr bool is_any_of = (std::same_as<T, types> || ...);
 
    template<typename T>
+   struct always_false : std::false_type {};
+   template<typename alternative_type, typename variant_type>
+   struct is_alternative {
+      static_assert(always_false<alternative_type>::value, "Can't use is_alternative<> with a non-variant");
+   };
+   template<typename alternative_type, typename... variant_alternatives>
+   struct is_alternative<alternative_type, std::variant<variant_alternatives...>>
+      : std::disjunction<std::is_same<alternative_type, variant_alternatives>...>
+   {};
+   template<typename alternative_type, typename variant_type>
+   concept is_alternative_c = is_alternative<alternative_type, variant_type>::value;
+
+   template<typename T>
    auto process(element& result, T&& arg) -> void;
 
    [[nodiscard]] auto to_string(const attribute& attrib) -> std::string;
@@ -187,11 +201,8 @@ namespace cheap::detail
    [[nodiscard]] auto get_element_str_impl(const element& elem, const int indentation, const int current_level) -> std::string;
    [[nodiscard]] auto get_attribute_name(const attribute& attrib) -> std::string;
    [[nodiscard]] auto is_in(std::span<const std::string_view> choices, const std::string& value) -> bool;
-   auto assert_enum_choice(const string_attribute& attrib, std::span<const std::string_view> choices) -> void;
    auto assert_attrib_valid(const attribute& attrib) -> void;
-
-   template<typename target_type>
-   auto assert_attribute_type(const attribute& attrib) -> void;
+   auto assert_string_enum_choice(const attribute& attrib, std::span<const std::string_view> choices) -> void;
 } // namespace cheap::detail
 
 
@@ -244,16 +255,6 @@ auto cheap::detail::get_joined_visits(
    return result;
 }
 
-template<typename target_type>
-auto cheap::detail::assert_attribute_type(const attribute& attrib) -> void
-{
-   if (std::holds_alternative<target_type>(attrib) == false)
-   {
-      const std::string target_type_str = std::same_as<target_type, bool_attribute> ? "bool attribute" : "string attribute";
-      throw cheap_exception{ std::format("Attribute {} must be a {}. It's not!", get_attribute_name(attrib), target_type_str) };
-   }
-}
-
 
 template<typename T>
 auto cheap::detail::process(element& result, T&& arg) -> void
@@ -270,7 +271,7 @@ auto cheap::detail::process(element& result, T&& arg) -> void
          result.m_type = arg;
       }
 
-      // otherwise -> content
+      // otherwise -> singular content
       else
       {
          if (result.m_inner_html.empty() == false)
@@ -310,7 +311,11 @@ auto cheap::get_element_str(
    return detail::get_element_str_impl(elem, indentation, 0);
 }
 
-cheap::element::element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html)
+cheap::element::element(
+   const std::string_view name,
+   const std::vector<attribute>& attributes,
+   const std::vector<content>& inner_html
+)
    : m_type(name)
    , m_attributes(attributes)
    , m_inner_html(inner_html)
@@ -377,58 +382,64 @@ auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
    // Check if global enumerated attributes are used correctly
    if (attrib_name == "autocapitalize")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "off", "on", "sentences", "words", "characters" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
    else if (attrib_name == "contenteditable")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "true", "false" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
    else if (attrib_name == "dir")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "ltr", "rtl", "auto" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
    else if (attrib_name == "draggable")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "true", "false" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
    else if (attrib_name == "enterkeyhint")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "enter", "done", "go", "next", "previous", "search", "send" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
    else if (attrib_name == "inputmode")
    {
-      assert_attribute_type<string_attribute>(attrib);
       constexpr std::string_view valid_list[] = { "none", "text", "decimal", "numeric", "tel", "search", "email", "url" };
-      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+      assert_string_enum_choice(attrib, valid_list);
    }
 }
 
 
-auto cheap::detail::assert_enum_choice(
-   const string_attribute& attrib,
+auto cheap::detail::assert_string_enum_choice(
+   const attribute& attrib,
    std::span<const std::string_view> choices
 ) -> void
 {
-   if (is_in(choices, attrib.m_data) == false)
+   if (std::holds_alternative<string_attribute>(attrib) == false)
+   {
+      throw cheap_exception{ std::format("Attribute {} must be a string attribute. It's not!", get_attribute_name(attrib)) };
+   }
+
+   const auto attrib_name = get_attribute_name(attrib);
+   if (is_in(choices, attrib_name) == false)
    {
       std::string choices_str;
-      for (int i = 0; i < std::size(choices); ++i)
+      for (int i = 0; i < std::ssize(choices); ++i)
       {
          if (i > 0)
             choices_str += ", ";
          choices_str += choices[i];
       }
-      throw cheap_exception{ std::format("Attribute is an enum. It must be one of [{}]. But it's {}!", choices_str, attrib.m_data) };
+      throw cheap_exception{
+         std::format(
+            "Attribute is an enum. It must be one of [{}]. But it's {}!",
+            choices_str,
+            attrib_name
+         )
+      };
    }
 }
 
@@ -486,7 +497,7 @@ auto cheap::detail::get_element_str_impl(
 auto cheap::detail::to_string(const attribute& attrib) -> std::string
 {
    // TODO: constraint this type to fix warning
-   const auto visitor = []<typename T>(const T & alternative) -> std::string
+   const auto visitor = []<is_alternative_c<attribute> T>(const T& alternative) -> std::string
    {
       if constexpr (std::same_as<T, bool_attribute>)
       {
