@@ -2,7 +2,6 @@
 #pragma once
 
 #include <exception>
-#include <optional>
 #include <span>
 #include <string>
 #include <variant>
@@ -41,7 +40,8 @@ namespace cheap
       explicit element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html);
       explicit element(const std::string_view name, const std::vector<content>& inner_html);
       explicit element(const std::string_view name);
-      [[nodiscard]] auto get_trivial() const->std::optional<std::string>;
+      [[nodiscard]] auto is_trivial() const -> bool;
+      [[nodiscard]] auto get_trivial() const -> std::string;
 
    private:
       explicit element() = default;
@@ -335,12 +335,17 @@ cheap::element::element(const std::string_view name)
    : element(name, {}, {})
 { }
 
-auto cheap::element::get_trivial() const -> std::optional<std::string>
+auto cheap::element::is_trivial() const -> bool
+{
+   if (m_inner_html.empty())
+      return true;
+
+   return m_inner_html.size() == 1 && std::holds_alternative<std::string>(m_inner_html.front());
+}
+auto cheap::element::get_trivial() const -> std::string
 {
    if (m_inner_html.empty())
       return "";
-   if (m_inner_html.size() != 1 || std::holds_alternative<std::string>(m_inner_html.front()) == false)
-      return std::nullopt;
    return std::get<std::string>(m_inner_html.front());
 }
 
@@ -493,14 +498,14 @@ auto cheap::detail::get_element_str_impl(
    const int current_level
 ) -> std::string
 {
-   if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
+   if(elem.is_trivial())
    {
       return CHEAP_FORMAT(
          "{}<{}{}>{}</{}>",
          detail::get_spaces(current_level * indentation),
          elem.m_type,
          detail::get_attribute_str(elem),
-         trivial_content.value(),
+         elem.get_trivial(),
          elem.m_type
       );
    }
