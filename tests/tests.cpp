@@ -5,7 +5,7 @@
 
 #define CHEAP_USE_FMT
 #define CHEAP_IMPL
-#include "cheap.h"
+#include "../cheap.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
