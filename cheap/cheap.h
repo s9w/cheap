@@ -231,12 +231,19 @@ namespace cheap
       }
    } // namespace detail
 
+
    template<typename ... Ts>
    auto create_element(Ts&&... args) -> element
    {
-      // TODO: assert that a name is set
+      static_assert(sizeof...(args) > 0, "At least set a name");
+
       element result{};
       (detail::process(result, std::forward<Ts>(args)), ...);
+
+      if(result.m_type.empty())
+      {
+         throw cheap_exception{"No name set"};
+      }
       return result;
    }
 
@@ -397,8 +404,6 @@ namespace cheap
       }
 
 
-      constexpr int indent = 3; // TODO make this parameter
-
       [[nodiscard]] auto get_spaces(const int count) -> std::string
       {
          std::string result;
@@ -409,9 +414,9 @@ namespace cheap
       }
 
 
-      [[nodiscard]] auto get_element_str(const std::string& elem, const int level) -> std::string
+      [[nodiscard]] auto get_element_str(const std::string& elem, const int indentation, const int current_level) -> std::string
       {
-         return std::format("{}{}", get_spaces(level * indent), elem);
+         return std::format("{}{}", get_spaces(current_level * indentation), elem);
       }
 
       template<typename variant_type, typename visitor_type>
@@ -434,31 +439,33 @@ namespace cheap
       }
 
 
-      [[nodiscard]] auto get_inner_html_str(const element& elem, const int level) -> std::string
+      [[nodiscard]] auto get_inner_html_str(const element& elem, const int indentation, const int current_level) -> std::string
       {
          const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
          {
-            return get_element_str(alternative, level + 1);
+            return get_element_str(alternative, indentation, current_level + 1);
          };
 
          return get_joined_visits(elem.m_inner_html, content_visitor, "\n");
       }
+
+      [[nodiscard]] auto get_element_str(const element& elem, const int indentation, const int current_level)->std::string;
    } // namespace detail
 
-
-   [[nodiscard]] auto get_element_str(const element& elem, const int level = 0) -> std::string;
+   [[nodiscard]] auto get_element_str(const element& elem, const int indentation = 4) -> std::string;
+   
 
 } // namespace cheap
 
 
 #ifdef CHEAP_IMPL
-[[nodiscard]] auto cheap::get_element_str(const element& elem, const int level) -> std::string
+auto cheap::detail::get_element_str(const element& elem, const int indentation, const int current_level) -> std::string
 {
    if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
    {
       return std::format(
          "{}<{}{}>{}</{}>",
-         detail::get_spaces(level * detail::indent),
+         detail::get_spaces(current_level * indentation),
          elem.m_type,
          detail::get_attribute_str(elem),
          trivial_content.value(),
@@ -470,10 +477,16 @@ namespace cheap
       std::string result;
       result += std::format("<{}{}>", elem.m_type, detail::get_attribute_str(elem));
       result += '\n';
-      result += detail::get_inner_html_str(elem, level);
+      result += detail::get_inner_html_str(elem, indentation, current_level);
       result += '\n';
       result += std::format("</{}>", elem.m_type);
       return result;
    }
+}
+
+
+auto cheap::get_element_str(const element& elem, const int indentation) -> std::string
+{
+   return detail::get_element_str(elem, indentation, 0);
 }
 #endif
