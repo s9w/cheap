@@ -11,11 +11,7 @@
 
 namespace cheap
 {
-
-   struct cheap_exception final : std::runtime_error
-   {
-      using runtime_error::runtime_error;
-   };
+   struct cheap_exception final : std::runtime_error { using runtime_error::runtime_error; };
 
    struct bool_attribute {
       bool m_value = true; // TODO: setting this to false
@@ -27,225 +23,31 @@ namespace cheap
    };
    using attribute = std::variant<bool_attribute, string_attribute>;
 
-   namespace detail
-   {
-      constexpr auto get_attribute_name(const attribute& attrib) -> std::string
-      {
-         return std::visit(
-            [](const auto& alternative) {return alternative.m_name; },
-            attrib
-         );
-      }
-
-
-      constexpr auto is_in(std::span<const std::string_view> choices, const std::string& value) -> bool
-      {
-         for (const auto& test : choices)
-         {
-            if (test == value)
-               return true;
-         }
-         return false;
-      }
-
-
-      template<typename target_type>
-      auto assert_attribute_type(const attribute& attrib) -> void
-      {
-         if (std::holds_alternative<target_type>(attrib) == false)
-         {
-            const std::string target_type_str = std::same_as<target_type, bool_attribute> ? "bool attribute" : "string attribute";
-            throw cheap_exception{ std::format("Attribute {} must be a {}. It's not!", get_attribute_name(attrib), target_type_str) };
-         }
-      }
-
-
-      auto assert_enum_choice(const string_attribute& attrib, std::span<const std::string_view> choices) -> void
-      {
-         if (is_in(choices, attrib.m_data) == false)
-         {
-            std::string choices_str;
-            for (int i = 0; i < std::size(choices); ++i)
-            {
-               if (i > 0)
-                  choices_str += ", ";
-               choices_str += choices[i];
-            }
-            throw cheap_exception{ std::format("Attribute is an enum. It must be one of [{}]. But it's {}!", choices_str, attrib.m_data) };
-         }
-      }
-
-
-      constexpr auto assert_attrib_valid(const attribute& attrib) -> void
-      {
-         // Check if global boolean attributes are used correctly
-         constexpr std::string_view bool_list[] = { "autofocus", "hidden", "itemscope" };
-         const auto attrib_name = get_attribute_name(attrib);
-         if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
-         {
-            throw cheap_exception{ std::format("{} attribute must be bool. It is not!", attrib_name) };
-         }
-
-         // TODO: string list (id etc)
-
-         // Check if global enumerated attributes are used correctly
-         if (attrib_name == "autocapitalize")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "off", "on", "sentences", "words", "characters" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-         else if (attrib_name == "contenteditable")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "true", "false" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-         else if (attrib_name == "dir")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "ltr", "rtl", "auto" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-         else if (attrib_name == "draggable")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "true", "false" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-         else if (attrib_name == "enterkeyhint")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "enter", "done", "go", "next", "previous", "search", "send" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-         else if (attrib_name == "inputmode")
-         {
-            assert_attribute_type<string_attribute>(attrib);
-            constexpr std::string_view valid_list[] = { "none", "text", "decimal", "numeric", "tel", "search", "email", "url" };
-            assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
-         }
-      }
-
-      // struct internal
-   } // namespace detail
-
-
-   auto operator "" _att(const char* c_str, std::size_t size) -> attribute
-   {
-      std::string str(c_str);
-      const auto equal_pos = str.find('=');
-      attribute result;
-      if (equal_pos == std::string::npos)
-      {
-         result = bool_attribute{ .m_name = str };
-      }
-      else
-      {
-         result = string_attribute{
-            .m_name = str.substr(0, equal_pos),
-            .m_data = str.substr(equal_pos + 1)
-         };
-      }
-      detail::assert_attrib_valid(result);
-      return result;
-   }
+   auto operator "" _att(const char* c_str, const std::size_t size) -> attribute;
 
    struct element;
    using content = std::variant<element, std::string>;
-
 
    struct element
    {
       std::string m_type;
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
-
       
-      explicit element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html)
-         : m_type(name)
-         , m_attributes(attributes)
-         , m_inner_html(inner_html)
-      { }
-      explicit element(const std::string_view name, const std::vector<content>& inner_html)
-         : element(name, {}, inner_html)
-      { }
-      explicit element(const std::string_view name)
-         : element(name, {}, {})
-      { }
-
-      [[nodiscard]] auto get_trivial() const -> std::optional<std::string>
-      {
-         if (m_inner_html.empty())
-            return "";
-         if (m_inner_html.size() != 1 || std::holds_alternative<std::string>(m_inner_html.front()) == false)
-            return std::nullopt;
-         return std::get<std::string>(m_inner_html.front());
-      }
+      explicit element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html);
+      explicit element(const std::string_view name, const std::vector<content>& inner_html);
+      explicit element(const std::string_view name);
+      [[nodiscard]] auto get_trivial() const->std::optional<std::string>;
 
    private:
       explicit element() = default;
       template<typename ... Ts>
-      friend auto create_element(Ts&&... args)->element;
+      friend auto create_element(Ts&&... args) -> element;
    };
 
 
-   namespace detail
-   {
-      template<typename T, typename ... types>
-      constexpr bool is_any_of = (std::same_as<T, types> || ...);
-
-      template<typename T>
-      auto process(element& result, T&& arg) -> void
-      {
-         if constexpr (is_any_of<T, element, attribute, std::string> == false)
-         {
-            process(result, std::string{ arg });
-         }
-         else if constexpr (std::same_as<T, std::string>)
-         {
-            // string as first parameter -> element name
-            if (result.m_type.empty())
-            {
-               result.m_type = arg;
-            }
-
-            // otherwise -> content
-            else
-            {
-               if (result.m_inner_html.empty() == false)
-               {
-                  // TODO: error
-               }
-               result.m_inner_html = { arg };
-            }
-         }
-         else if constexpr (std::same_as<T, attribute>)
-         {
-            result.m_attributes.push_back(arg);
-         }
-         else if constexpr (std::same_as<T, element>)
-         {
-            result.m_inner_html.push_back(arg);
-         }
-      }
-   } // namespace detail
-
-
    template<typename ... Ts>
-   auto create_element(Ts&&... args) -> element
-   {
-      static_assert(sizeof...(args) > 0, "At least set a name");
-
-      element result{};
-      (detail::process(result, std::forward<Ts>(args)), ...);
-
-      if(result.m_type.empty())
-      {
-         throw cheap_exception{"No name set"};
-      }
-      return result;
-   }
+   [[nodiscard]] auto create_element(Ts&&... args) -> element;
 
    template<typename ... Ts> auto html(Ts&&... args) -> element { return create_element("html", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto base(Ts&&... args) -> element { return create_element("base", std::forward<Ts>(args)...); }
@@ -358,108 +160,304 @@ namespace cheap
    template<typename ... Ts> auto slot(Ts&&... args) -> element { return create_element("slot", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto template_(Ts&&... args) -> element { return create_element("template", std::forward<Ts>(args)...); }
 
-
-   namespace detail
-   {
-
-      [[nodiscard]] auto to_string(const attribute& attrib) -> std::string
-      {
-         const auto visitor = []<typename T>(const T & alternative) -> std::string
-         {
-            if constexpr (std::same_as<T, bool_attribute>)
-            {
-               // The presence of a boolean string_attribute on an element represents the true
-               // value, and the absence of the string_attribute represents the false value.
-               // [...]]
-               // The values "true" and "false" are not allowed on boolean attributes.
-               // To represent a false value, the string_attribute has to be omitted altogether.
-               // [https://html.spec.whatwg.org/dev/common-microsyntaxes.html#boolean-attributes]
-               if (alternative.m_value == false)
-                  return {};
-               return alternative.m_name;
-            }
-            else if constexpr (std::same_as<T, string_attribute>)
-            {
-               return std::format("{}=\"{}\"", alternative.m_name, alternative.m_data);
-            }
-         };
-         return std::visit(visitor, attrib);
-      }
-
-
-      [[nodiscard]] auto get_attribute_str(const element& elem) -> std::string
-      {
-         const auto visitor = []<typename T>(const T & alternative)
-         {
-            return to_string(alternative);
-         };
-
-         std::string result;
-         for (const auto& x : elem.m_attributes)
-         {
-            result += ' ';
-            result += std::visit(visitor, x);
-         }
-         return result;
-      }
-
-
-      [[nodiscard]] auto get_spaces(const int count) -> std::string
-      {
-         std::string result;
-         result.reserve(count);
-         for (int i = 0; i < count; ++i)
-            result += ' ';
-         return result;
-      }
-
-
-      [[nodiscard]] auto get_element_str(const std::string& elem, const int indentation, const int current_level) -> std::string
-      {
-         return std::format("{}{}", get_spaces(current_level * indentation), elem);
-      }
-
-      template<typename variant_type, typename visitor_type>
-      [[nodiscard]] auto get_joined_visits(
-         const std::vector<variant_type>& variants,
-         const visitor_type& visitor,
-         const std::string_view delim
-      ) -> std::string
-      {
-         if (variants.empty())
-            return std::string{};
-         std::string result;
-         for (int i = 0; i < std::ssize(variants); ++i)
-         {
-            if (i > 0)
-               result += '\n';
-            result += std::visit(visitor, variants[i]);
-         }
-         return result;
-      }
-
-
-      [[nodiscard]] auto get_inner_html_str(const element& elem, const int indentation, const int current_level) -> std::string
-      {
-         const auto content_visitor = [&]<typename T>(const T& alternative) -> std::string
-         {
-            return get_element_str(alternative, indentation, current_level + 1);
-         };
-
-         return get_joined_visits(elem.m_inner_html, content_visitor, "\n");
-      }
-
-      [[nodiscard]] auto get_element_str(const element& elem, const int indentation, const int current_level)->std::string;
-   } // namespace detail
-
    [[nodiscard]] auto get_element_str(const element& elem, const int indentation = 4) -> std::string;
-   
-
 } // namespace cheap
+
+namespace cheap::detail
+{
+   template<typename T, typename ... types>
+   constexpr bool is_any_of = (std::same_as<T, types> || ...);
+
+   template<typename T>
+   auto process(element& result, T&& arg) -> void;
+
+   [[nodiscard]] auto to_string(const attribute& attrib) -> std::string;
+   [[nodiscard]] auto get_attribute_str(const element& elem) -> std::string;
+   [[nodiscard]] auto get_spaces(const int count) -> std::string;
+   [[nodiscard]] auto get_element_str_impl(const std::string& elem, const int indentation, const int current_level) -> std::string;
+
+   template<typename variant_type, typename visitor_type>
+   [[nodiscard]] auto get_joined_visits(
+      const std::vector<variant_type>& variants,
+      const visitor_type& visitor,
+      const std::string_view delim
+   ) -> std::string;
+
+   [[nodiscard]] auto get_inner_html_str(const element& elem, const int indentation, const int current_level) -> std::string;
+   [[nodiscard]] auto get_element_str_impl(const element& elem, const int indentation, const int current_level) -> std::string;
+   [[nodiscard]] auto get_attribute_name(const attribute& attrib) -> std::string;
+   [[nodiscard]] auto is_in(std::span<const std::string_view> choices, const std::string& value) -> bool;
+   auto assert_enum_choice(const string_attribute& attrib, std::span<const std::string_view> choices) -> void;
+   auto assert_attrib_valid(const attribute& attrib) -> void;
+
+   template<typename target_type>
+   auto assert_attribute_type(const attribute& attrib) -> void;
+} // namespace cheap::detail
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// template function definitions
+
+template<typename ... Ts>
+auto cheap::create_element(Ts&&... args) -> element
+{
+   static_assert(sizeof...(args) > 0, "At least set a name");
+
+   element result{};
+   (detail::process(result, std::forward<Ts>(args)), ...);
+
+   if (result.m_type.empty())
+   {
+      throw cheap_exception{ "No name set" };
+   }
+   return result;
+}
+
+template<typename variant_type, typename visitor_type>
+auto cheap::detail::get_joined_visits(
+   const std::vector<variant_type>& variants,
+   const visitor_type& visitor,
+   const std::string_view delim
+) -> std::string
+{
+   if (variants.empty())
+      return std::string{};
+   std::string result;
+   for (int i = 0; i < std::ssize(variants); ++i)
+   {
+      if (i > 0)
+         result += '\n';
+      result += std::visit(visitor, variants[i]);
+   }
+   return result;
+}
+
+template<typename target_type>
+auto cheap::detail::assert_attribute_type(const attribute& attrib) -> void
+{
+   if (std::holds_alternative<target_type>(attrib) == false)
+   {
+      const std::string target_type_str = std::same_as<target_type, bool_attribute> ? "bool attribute" : "string attribute";
+      throw cheap_exception{ std::format("Attribute {} must be a {}. It's not!", get_attribute_name(attrib), target_type_str) };
+   }
+}
+
+
+template<typename T>
+auto cheap::detail::process(element& result, T&& arg) -> void
+{
+   if constexpr (is_any_of<T, element, attribute, std::string> == false)
+   {
+      process(result, std::string{ arg });
+   }
+   else if constexpr (std::same_as<T, std::string>)
+   {
+      // string as first parameter -> element name
+      if (result.m_type.empty())
+      {
+         result.m_type = arg;
+      }
+
+      // otherwise -> content
+      else
+      {
+         if (result.m_inner_html.empty() == false)
+         {
+            // TODO: error
+         }
+         result.m_inner_html = { arg };
+      }
+   }
+   else if constexpr (std::same_as<T, attribute>)
+   {
+      result.m_attributes.push_back(arg);
+   }
+   else if constexpr (std::same_as<T, element>)
+   {
+      result.m_inner_html.push_back(arg);
+   }
+}
+
+
+
+
+
+
+
+
+
 
 
 #ifdef CHEAP_IMPL
-auto cheap::detail::get_element_str(const element& elem, const int indentation, const int current_level) -> std::string
+
+auto cheap::get_element_str(
+   const element& elem,
+   const int indentation
+) -> std::string
+{
+   return detail::get_element_str_impl(elem, indentation, 0);
+}
+
+cheap::element::element(const std::string_view name, const std::vector<attribute>& attributes, const std::vector<content>& inner_html)
+   : m_type(name)
+   , m_attributes(attributes)
+   , m_inner_html(inner_html)
+{ }
+cheap::element::element(const std::string_view name, const std::vector<content>& inner_html)
+   : element(name, {}, inner_html)
+{ }
+cheap::element::element(const std::string_view name)
+   : element(name, {}, {})
+{ }
+
+auto cheap::element::get_trivial() const -> std::optional<std::string>
+{
+   if (m_inner_html.empty())
+      return "";
+   if (m_inner_html.size() != 1 || std::holds_alternative<std::string>(m_inner_html.front()) == false)
+      return std::nullopt;
+   return std::get<std::string>(m_inner_html.front());
+}
+
+auto cheap::operator "" _att(const char* c_str, std::size_t size) -> attribute
+{
+   std::string str(c_str);
+   const auto equal_pos = str.find('=');
+   attribute result;
+   if (equal_pos == std::string::npos)
+   {
+      result = bool_attribute{ .m_name = str };
+   }
+   else
+   {
+      result = string_attribute{
+         .m_name = str.substr(0, equal_pos),
+         .m_data = str.substr(equal_pos + 1)
+      };
+   }
+   detail::assert_attrib_valid(result);
+   return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
+{
+   // Check if global boolean attributes are used correctly
+   constexpr std::string_view bool_list[] = { "autofocus", "hidden", "itemscope" };
+   const auto attrib_name = get_attribute_name(attrib);
+   if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
+   {
+      throw cheap_exception{ std::format("{} attribute must be bool. It is not!", attrib_name) };
+   }
+
+   // TODO: string list (id etc)
+
+   // Check if global enumerated attributes are used correctly
+   if (attrib_name == "autocapitalize")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "off", "on", "sentences", "words", "characters" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+   else if (attrib_name == "contenteditable")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "true", "false" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+   else if (attrib_name == "dir")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "ltr", "rtl", "auto" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+   else if (attrib_name == "draggable")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "true", "false" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+   else if (attrib_name == "enterkeyhint")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "enter", "done", "go", "next", "previous", "search", "send" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+   else if (attrib_name == "inputmode")
+   {
+      assert_attribute_type<string_attribute>(attrib);
+      constexpr std::string_view valid_list[] = { "none", "text", "decimal", "numeric", "tel", "search", "email", "url" };
+      assert_enum_choice(std::get<string_attribute>(attrib), valid_list);
+   }
+}
+
+
+auto cheap::detail::assert_enum_choice(
+   const string_attribute& attrib,
+   std::span<const std::string_view> choices
+) -> void
+{
+   if (is_in(choices, attrib.m_data) == false)
+   {
+      std::string choices_str;
+      for (int i = 0; i < std::size(choices); ++i)
+      {
+         if (i > 0)
+            choices_str += ", ";
+         choices_str += choices[i];
+      }
+      throw cheap_exception{ std::format("Attribute is an enum. It must be one of [{}]. But it's {}!", choices_str, attrib.m_data) };
+   }
+}
+
+
+auto cheap::detail::get_attribute_name(const attribute& attrib) -> std::string
+{
+   return std::visit(
+      [](const auto& alternative) {return alternative.m_name; },
+      attrib
+   );
+}
+
+
+auto cheap::detail::is_in(std::span<const std::string_view> choices, const std::string& value) -> bool
+{
+   for (const auto& test : choices)
+   {
+      if (test == value)
+         return true;
+   }
+   return false;
+}
+
+
+auto cheap::detail::get_element_str_impl(
+   const element& elem,
+   const int indentation,
+   const int current_level
+) -> std::string
 {
    if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
    {
@@ -485,8 +483,80 @@ auto cheap::detail::get_element_str(const element& elem, const int indentation, 
 }
 
 
-auto cheap::get_element_str(const element& elem, const int indentation) -> std::string
+auto cheap::detail::to_string(const attribute& attrib) -> std::string
 {
-   return detail::get_element_str(elem, indentation, 0);
+   // TODO: constraint this type to fix warning
+   const auto visitor = []<typename T>(const T & alternative) -> std::string
+   {
+      if constexpr (std::same_as<T, bool_attribute>)
+      {
+         // The presence of a boolean string_attribute on an element represents the true
+         // value, and the absence of the string_attribute represents the false value.
+         // [...]]
+         // The values "true" and "false" are not allowed on boolean attributes.
+         // To represent a false value, the string_attribute has to be omitted altogether.
+         // [https://html.spec.whatwg.org/dev/common-microsyntaxes.html#boolean-attributes]
+         if (alternative.m_value == false)
+            return {};
+         return alternative.m_name;
+      }
+      else if constexpr (std::same_as<T, string_attribute>)
+      {
+         return std::format("{}=\"{}\"", alternative.m_name, alternative.m_data);
+      }
+   };
+   return std::visit(visitor, attrib);
+}
+
+
+auto cheap::detail::get_attribute_str(const element& elem) -> std::string
+{
+   const auto visitor = []<typename T>(const T & alternative)
+   {
+      return to_string(alternative);
+   };
+
+   std::string result;
+   for (const auto& x : elem.m_attributes)
+   {
+      result += ' ';
+      result += std::visit(visitor, x);
+   }
+   return result;
+}
+
+
+auto cheap::detail::get_spaces(const int count) -> std::string
+{
+   std::string result;
+   result.reserve(count);
+   for (int i = 0; i < count; ++i)
+      result += ' ';
+   return result;
+}
+
+
+auto cheap::detail::get_element_str_impl(
+   const std::string& elem,
+   const int indentation,
+   const int current_level
+) -> std::string
+{
+   return std::format("{}{}", get_spaces(current_level * indentation), elem);
+}
+
+
+auto cheap::detail::get_inner_html_str(
+   const element& elem,
+   const int indentation,
+   const int current_level
+) -> std::string
+{
+   const auto content_visitor = [&]<typename T>(const T & alternative) -> std::string
+   {
+      return get_element_str_impl(alternative, indentation, current_level + 1);
+   };
+
+   return get_joined_visits(elem.m_inner_html, content_visitor, "\n");
 }
 #endif
