@@ -34,19 +34,33 @@ TEST_CASE("get_element_str()") {
    CHECK_EQ(get_element_str({div(), div()}), "<div></div>\n<div></div>\n");
    CHECK_EQ(get_element_str(img()), "<img />\n");
    SUBCASE("false boolean attribute"){
-      CHECK_EQ(get_element_str(img(bool_attribute{.m_value=false, .m_name="test"})), "<img />\n");
+      CHECK_EQ(get_element_str(img(bool_attribute{.m_name="test", .m_value = false })), "<img />\n");
    }
 }
 
 TEST_CASE("playground"){
-   // const std::string elem_str = get_element_str(
-   //    {
-   //       div(img("src=test.jpg"_att))
-   //       // , div(img("src=test.jpg"_att))
-   //    }
-   // );
-   const std::string elem_str = get_element_str(div(span("first"), img("src=test.jpg"_att)));
+   const std::string elem_str = get_element_str(
+      { img("src=a.jpg"_att), img("src=b.jpg"_att) }
+   );
+   // const std::string elem_str = get_element_str(div(span("first"), img("src=test.jpg"_att)));
    std::ofstream file_out("test.html");
    // file_out << get_element_str(elem);
    file_out << elem_str;
 }
+
+// int main()
+// {
+//    using namespace cheap;
+//    std::vector<element> elements;
+//    elements.reserve(1'000'000);
+//    for(int i=0; i<1'000'000; ++i)
+//    {
+//       auto& ref = elements.emplace_back("div");
+//
+//       ref.m_attributes.reserve(3);
+//       ref.m_attributes.push_back(bool_attribute{ "xxx" });
+//       ref.m_attributes.push_back(bool_attribute{ "yyy" });
+//       ref.m_attributes.push_back(bool_attribute{ "zzz" });
+//       ref.m_inner_html.push_back(element{ "div", {"inner"} });
+//    }
+// }
