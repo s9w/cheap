@@ -12,6 +12,16 @@ TEST_CASE("attributes") {
    CHECK(std::holds_alternative<string_attribute>("xxx=yyy"_att));
    CHECK_THROWS_AS("hidden=xxx"_att, cheap_exception);
    CHECK_THROWS_AS("autocapitalize=xxx"_att, cheap_exception);
+
+   // auto elem = create_element("div", "cool=true"_att, "hallo");
+   auto elem = div("data-cool=true"_att,
+      span("first"),
+      span("second")
+      );
+
+   // auto elem = div({ "some string content" });
+   std::ofstream file_out("test.html");
+   file_out << get_element_str(elem);
 }
 
 
