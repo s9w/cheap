@@ -200,9 +200,9 @@ namespace cheap::detail
    [[nodiscard]] auto get_inner_html_str(const element& elem, const int indentation, const int current_level) -> std::string;
    [[nodiscard]] auto get_element_str_impl(const element& elem, const int indentation, const int current_level) -> std::string;
    [[nodiscard]] auto get_attribute_name(const attribute& attrib) -> std::string;
-   [[nodiscard]] auto is_in(std::span<const std::string_view> choices, const std::string& value) -> bool;
+   [[nodiscard]] auto is_in(const std::span<const std::string_view> choices, const std::string& value) -> bool;
    auto assert_attrib_valid(const attribute& attrib) -> void;
-   auto assert_string_enum_choice(const attribute& attrib, std::span<const std::string_view> choices) -> void;
+   auto assert_string_enum_choice(const attribute& attrib, const std::span<const std::string_view> choices) -> void;
 } // namespace cheap::detail
 
 
@@ -374,10 +374,15 @@ auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
    const auto attrib_name = get_attribute_name(attrib);
    if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
    {
-      throw cheap_exception{ std::format("{} attribute must be bool. It is not!", attrib_name) };
+      throw cheap_exception{ std::format("{} attribute must be boolean. It is not!", attrib_name) };
    }
 
-   // TODO: string list (id etc)
+   // Check if global string attributes are used correctly
+   constexpr std::string_view string_attrib_list[] = { "accesskey", "class", "id", "is", "itemid", "itemref", "itemscope", "itemtype", "lang", "nonce", "part", "role", "slot", "style", "tabindex", "title" };
+   if(is_in(string_attrib_list, attrib_name) && std::holds_alternative<string_attribute>(attrib) == false)
+   {
+      throw cheap_exception{ std::format("{} attribute must be a string. It is not!", attrib_name) };
+   }
 
    // Check if global enumerated attributes are used correctly
    if (attrib_name == "autocapitalize")
@@ -410,12 +415,22 @@ auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
       constexpr std::string_view valid_list[] = { "none", "text", "decimal", "numeric", "tel", "search", "email", "url" };
       assert_string_enum_choice(attrib, valid_list);
    }
+   else if (attrib_name == "spellcheck")
+   {
+      constexpr std::string_view valid_list[] = { "true", "false" };
+      assert_string_enum_choice(attrib, valid_list);
+   }
+   else if (attrib_name == "translate")
+   {
+      constexpr std::string_view valid_list[] = { "yes", "no" };
+      assert_string_enum_choice(attrib, valid_list);
+   }
 }
 
 
 auto cheap::detail::assert_string_enum_choice(
    const attribute& attrib,
-   std::span<const std::string_view> choices
+   const std::span<const std::string_view> choices
 ) -> void
 {
    if (std::holds_alternative<string_attribute>(attrib) == false)
@@ -453,7 +468,7 @@ auto cheap::detail::get_attribute_name(const attribute& attrib) -> std::string
 }
 
 
-auto cheap::detail::is_in(std::span<const std::string_view> choices, const std::string& value) -> bool
+auto cheap::detail::is_in(const std::span<const std::string_view> choices, const std::string& value) -> bool
 {
    for (const auto& test : choices)
    {
@@ -496,7 +511,6 @@ auto cheap::detail::get_element_str_impl(
 
 auto cheap::detail::to_string(const attribute& attrib) -> std::string
 {
-   // TODO: constraint this type to fix warning
    const auto visitor = []<is_alternative_c<attribute> T>(const T& alternative) -> std::string
    {
       if constexpr (std::same_as<T, bool_attribute>)
