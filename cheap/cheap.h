@@ -2,12 +2,15 @@
 #pragma once
 
 #include <exception>
-#include <format> // TODO: configurable to use fmt
 #include <optional>
 #include <span>
 #include <string>
 #include <variant>
 #include <vector>
+
+#ifndef CHEAP_USE_FMT
+#include <format>
+#endif
 
 
 namespace cheap
@@ -203,9 +206,14 @@ namespace cheap::detail
    [[nodiscard]] auto is_in(const std::span<const std::string_view> choices, const std::string& value) -> bool;
    auto assert_attrib_valid(const attribute& attrib) -> void;
    auto assert_string_enum_choice(const attribute& attrib, const std::span<const std::string_view> choices) -> void;
+
 } // namespace cheap::detail
 
-
+#ifdef CHEAP_USE_FMT
+#define CHEAP_FORMAT(...) fmt::format( __VA_ARGS__ )
+#else
+#define CHEAP_FORMAT(...) std::format( __VA_ARGS__ )
+#endif
 
 
 
@@ -374,14 +382,14 @@ auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
    const auto attrib_name = get_attribute_name(attrib);
    if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
    {
-      throw cheap_exception{ std::format("{} attribute must be boolean. It is not!", attrib_name) };
+      throw cheap_exception{ CHEAP_FORMAT("attribute \"{}\" must be boolean. It is not!\n", attrib_name) };
    }
 
    // Check if global string attributes are used correctly
    constexpr std::string_view string_attrib_list[] = { "accesskey", "class", "id", "is", "itemid", "itemref", "itemscope", "itemtype", "lang", "nonce", "part", "role", "slot", "style", "tabindex", "title" };
    if(is_in(string_attrib_list, attrib_name) && std::holds_alternative<string_attribute>(attrib) == false)
    {
-      throw cheap_exception{ std::format("{} attribute must be a string. It is not!", attrib_name) };
+      throw cheap_exception{ CHEAP_FORMAT("attribute \"{}\" must be a string. It is not!\n", attrib_name) };
    }
 
    // Check if global enumerated attributes are used correctly
@@ -435,7 +443,7 @@ auto cheap::detail::assert_string_enum_choice(
 {
    if (std::holds_alternative<string_attribute>(attrib) == false)
    {
-      throw cheap_exception{ std::format("Attribute {} must be a string attribute. It's not!", get_attribute_name(attrib)) };
+      throw cheap_exception{ CHEAP_FORMAT("Attribute \"{}\" must be a string attribute. It's not!\n", get_attribute_name(attrib)) };
    }
 
    const auto attrib_name = get_attribute_name(attrib);
@@ -449,8 +457,8 @@ auto cheap::detail::assert_string_enum_choice(
          choices_str += choices[i];
       }
       throw cheap_exception{
-         std::format(
-            "Attribute is an enum. It must be one of [{}]. But it's {}!",
+         CHEAP_FORMAT(
+            "Attribute is an enum. It must be one of [{}]. But it's \"{}\"!\n",
             choices_str,
             attrib_name
          )
@@ -487,7 +495,7 @@ auto cheap::detail::get_element_str_impl(
 {
    if (const auto& trivial_content = elem.get_trivial(); trivial_content.has_value())
    {
-      return std::format(
+      return CHEAP_FORMAT(
          "{}<{}{}>{}</{}>",
          detail::get_spaces(current_level * indentation),
          elem.m_type,
@@ -499,11 +507,11 @@ auto cheap::detail::get_element_str_impl(
    else
    {
       std::string result;
-      result += std::format("<{}{}>", elem.m_type, detail::get_attribute_str(elem));
+      result += CHEAP_FORMAT("<{}{}>", elem.m_type, detail::get_attribute_str(elem));
       result += '\n';
       result += detail::get_inner_html_str(elem, indentation, current_level);
       result += '\n';
-      result += std::format("</{}>", elem.m_type);
+      result += CHEAP_FORMAT("</{}>", elem.m_type);
       return result;
    }
 }
@@ -527,7 +535,7 @@ auto cheap::detail::to_string(const attribute& attrib) -> std::string
       }
       else if constexpr (std::same_as<T, string_attribute>)
       {
-         return std::format("{}=\"{}\"", alternative.m_name, alternative.m_data);
+         return CHEAP_FORMAT("{}=\"{}\"", alternative.m_name, alternative.m_data);
       }
    };
    return std::visit(visitor, attrib);
@@ -567,7 +575,7 @@ auto cheap::detail::get_element_str_impl(
    const int current_level
 ) -> std::string
 {
-   return std::format("{}{}", get_spaces(current_level * indentation), elem);
+   return CHEAP_FORMAT("{}{}", get_spaces(current_level * indentation), elem);
 }
 
 

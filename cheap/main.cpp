@@ -1,10 +1,16 @@
 // #include <fstream>
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
+#define CHEAP_USE_FMT
 #define CHEAP_IMPL
 #include "cheap.h"
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
+
+
 
 using namespace cheap;
 
@@ -19,6 +25,7 @@ TEST_CASE("attributes") {
       span("first"),
       span("second")
       );
+
    
    // element elem{ "div", {"cool=true"_att},
    //    {
