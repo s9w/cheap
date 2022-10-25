@@ -194,15 +194,15 @@ namespace cheap::detail
    concept is_alternative_c = is_alternative<alternative_type, variant_type>::value;
 
    template<typename T>
-   auto process(element& result, T&& arg) -> void;
+   auto process_variadic_param(element& result, T&& arg) -> void;
 
-   auto to_string(const attribute& attrib, std::string& output) -> void;
+   auto write_attribute_string(const attribute& attrib, std::string& output) -> void;
    [[nodiscard]] auto get_attributes_str(const std::vector<attribute>& attributes) -> std::string;
    [[nodiscard]] auto get_spaces(const int count) -> std::string;
-   auto get_element_str_impl(const std::string& elem, const int indentation, const int current_level, std::string& output) -> void;
+   auto write_element_str_impl(const std::string& elem, const int indentation, const int current_level, std::string& output) -> void;
 
    auto get_inner_html_str(const element& elem, const int indentation, const int current_level, std::string& output) -> void;
-   auto get_element_str_impl(const element& elem, const int indentation, const int current_level, std::string& output) -> void;
+   auto write_element_str_impl(const element& elem, const int indentation, const int current_level, std::string& output) -> void;
    [[nodiscard]] auto get_attribute_name(const attribute& attrib) -> std::string;
    [[nodiscard]] auto is_in(const std::span<const std::string_view> choices, const std::string& value) -> bool;
    auto assert_attrib_valid(const attribute& attrib) -> void;
@@ -238,7 +238,7 @@ auto cheap::create_element(Ts&&... args) -> element
    static_assert(sizeof...(args) > 0, "At least set a name");
 
    element result{};
-   (detail::process(result, std::forward<Ts>(args)), ...);
+   (detail::process_variadic_param(result, std::forward<Ts>(args)), ...);
 
    if (result.m_type.empty())
    {
@@ -249,11 +249,11 @@ auto cheap::create_element(Ts&&... args) -> element
 
 
 template<typename T>
-auto cheap::detail::process(element& result, T&& arg) -> void
+auto cheap::detail::process_variadic_param(element& result, T&& arg) -> void
 {
    if constexpr (is_any_of<T, element, attribute, bool_attribute, string_attribute, std::string> == false)
    {
-      process(result, std::string{ arg });
+      process_variadic_param(result, std::string{ arg });
    }
    else if constexpr (std::same_as<T, std::string>)
    {
@@ -323,7 +323,7 @@ auto cheap::write_element_str(
 ) -> void
 {
    output.clear();
-   detail::get_element_str_impl(elem, indentation, 0, output);
+   detail::write_element_str_impl(elem, indentation, 0, output);
 }
 
 
@@ -336,7 +336,7 @@ auto cheap::write_element_str(
    output.clear();
    for (const auto& elem : elements)
    {
-      detail::get_element_str_impl(elem, indentation, 0, output);
+      detail::write_element_str_impl(elem, indentation, 0, output);
    }
 }
 
@@ -520,7 +520,7 @@ auto cheap::detail::is_in(const std::span<const std::string_view> choices, const
 }
 
 
-auto cheap::detail::get_element_str_impl(
+auto cheap::detail::write_element_str_impl(
    const element& elem,
    const int indentation,
    const int current_level,
@@ -572,7 +572,7 @@ auto cheap::detail::get_element_str_impl(
 }
 
 
-auto cheap::detail::to_string(const attribute& attrib, std::string& output) -> void
+auto cheap::detail::write_attribute_string(const attribute& attrib, std::string& output) -> void
 {
    const auto visitor = [&]<is_alternative_c<attribute> T>(const T& alternative) -> void
    {
@@ -603,7 +603,7 @@ auto cheap::detail::get_attributes_str(const std::vector<attribute>& attributes)
    std::string result;
    const auto visitor = [&]<typename T>(const T& alternative)
    {
-      to_string(alternative, result);
+      write_attribute_string(alternative, result);
    };
    
    for (const auto& x : attributes)
@@ -624,7 +624,7 @@ auto cheap::detail::get_spaces(const int count) -> std::string
 }
 
 
-auto cheap::detail::get_element_str_impl(
+auto cheap::detail::write_element_str_impl(
    const std::string& elem,
    const int indentation,
    const int current_level,
@@ -644,7 +644,7 @@ auto cheap::detail::get_inner_html_str(
 {
    const auto content_visitor = [&]<typename T>(const T& alternative) -> void
    {
-      get_element_str_impl(alternative, indentation, current_level + 1, output);
+      write_element_str_impl(alternative, indentation, current_level + 1, output);
    };
 
 
