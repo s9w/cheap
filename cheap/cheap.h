@@ -26,7 +26,7 @@ namespace cheap
    };
    using attribute = std::variant<bool_attribute, string_attribute>;
 
-   auto operator "" _att(const char* c_str, const std::size_t size) -> attribute;
+   auto operator ""_att(const char* c_str, const std::size_t size) -> attribute;
 
    struct element;
    using content = std::variant<element, std::string>;
@@ -50,6 +50,8 @@ namespace cheap
       friend auto create_element(Ts&&... args) -> element;
    };
 
+   [[nodiscard]] auto get_element_str(const element& elem,                  const int indentation = 4) -> std::string;
+   [[nodiscard]] auto get_element_str(const std::vector<element>& elements, const int indentation = 4) -> std::string;
 
    template<typename ... Ts>
    [[nodiscard]] auto create_element(Ts&&... args) -> element;
@@ -165,8 +167,7 @@ namespace cheap
    template<typename ... Ts> auto var       (Ts&&... args) -> element { return create_element("var",        std::forward<Ts>(args)...); }
    template<typename ... Ts> auto video     (Ts&&... args) -> element { return create_element("video",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto wbr       (Ts&&... args) -> element { return create_element("wbr",        std::forward<Ts>(args)...); }
-  
-   [[nodiscard]] auto get_element_str(const element& elem, const int indentation = 4) -> std::string;
+
 } // namespace cheap
 
 namespace cheap::detail
@@ -319,6 +320,19 @@ auto cheap::get_element_str(
 ) -> std::string
 {
    return detail::get_element_str_impl(elem, indentation, 0);
+}
+
+auto cheap::get_element_str(
+   const std::vector<element>& elements,
+   const int indentation
+) -> std::string
+{
+   std::string result;
+   for (const auto& elem : elements)
+   {
+      result += detail::get_element_str_impl(elem, indentation, 0);
+   }
+   return result;
 }
 
 cheap::element::element(
@@ -515,21 +529,23 @@ auto cheap::detail::get_element_str_impl(
       }
 
       return CHEAP_FORMAT(
-         "{}<{}{} />",
+         "{}<{}{} />{}",
          detail::get_spaces(current_level * indentation),
          elem.m_type,
-         detail::get_attribute_str(elem)
+         detail::get_attribute_str(elem),
+         (current_level==0)?"\n":""
       );
    }
    else if(elem.is_trivial())
    {
       return CHEAP_FORMAT(
-         "{}<{}{}>{}</{}>",
+         "{}<{}{}>{}</{}>{}",
          detail::get_spaces(current_level * indentation),
          elem.m_type,
          detail::get_attribute_str(elem),
          elem.get_trivial(),
-         elem.m_type
+         elem.m_type,
+         (current_level == 0) ? "\n" : ""
       );
    }
    else
@@ -540,6 +556,8 @@ auto cheap::detail::get_element_str_impl(
       result += detail::get_inner_html_str(elem, indentation, current_level);
       result += '\n';
       result += CHEAP_FORMAT("</{}>", elem.m_type);
+      if (current_level == 0)
+         result += '\n';
       return result;
    }
 }
