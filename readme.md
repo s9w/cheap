@@ -29,11 +29,11 @@ Attributes can be created with the `_att` literal operator. For boolean attribut
 ```c++
 struct bool_attribute {
    std::string m_name;
-   bool m_value = true;
+   bool        m_value = true;
 };
 struct string_attribute {
    std::string m_name;
-   std::string m_data;
+   std::string m_value;
 };
 ```
 
@@ -68,7 +68,7 @@ An `element` is basically:
 ```c++
 struct element
 {
-   std::string m_type;
+   std::string m_name;
    std::vector<attribute> m_attributes;
    std::vector<content> m_inner_html;
 
@@ -121,10 +121,12 @@ auto write_element_str(const std::vector<element>& elements, std::string& output
 ## Error handling
 The HTML spec constraints certain attributes
 - There are enum attributes which have a set of allowed values. For example, `dir` must be one of `ltr`, `rtl` or `auto`
-- There are bollean attributes which can't have a value (`autofocus`, `hidden` and `itemscope`)
+- There are boolean attributes which can't have a value (`autofocus`, `hidden` and `itemscope`)
 - There are string attributes which must have a value (For example `id`)
 
-Also there's self-closing tags (`<area>`, `<base>`, `<br>`, `<col>`, `<embed>`, `<hr>`, `<img>`, `<input>`, `<link>`, `<meta>`, `<source>`, `<track>` and `<wbr>`). Those can't have sub-elements.
+Other checks:
+- Self-closing tags (`<area>`, `<base>`, `<br>`, `<col>`, `<embed>`, `<hr>`, `<img>`, `<input>`, `<link>`, `<meta>`, `<source>`, `<track>` and `<wbr>`) can't have sub-elements
+- `create_element()` must get a name as the first parameter
 
 If any of that is violated, a `cheap_exception` is thrown with a meaningful error message.
 

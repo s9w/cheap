@@ -19,11 +19,11 @@ namespace cheap
 
    struct bool_attribute {
       std::string m_name;
-      bool m_value = true;
+      bool        m_value = true;
    };
    struct string_attribute {
       std::string m_name;
-      std::string m_data;
+      std::string m_value;
    };
    static_assert(std::is_aggregate_v<bool_attribute>);
    static_assert(std::is_aggregate_v<string_attribute>);
@@ -36,7 +36,7 @@ namespace cheap
 
    struct element
    {
-      std::string m_type;
+      std::string m_name;
       std::vector<attribute> m_attributes;
       std::vector<content> m_inner_html;
       
@@ -240,7 +240,7 @@ auto cheap::create_element(Ts&&... args) -> element
    element result{};
    (detail::process_variadic_param(result, std::forward<Ts>(args)), ...);
 
-   if (result.m_type.empty())
+   if (result.m_name.empty())
    {
       throw cheap_exception{ "No name set" };
    }
@@ -258,9 +258,9 @@ auto cheap::detail::process_variadic_param(element& result, T&& arg) -> void
    else if constexpr (std::same_as<T, std::string>)
    {
       // string as first parameter -> element name
-      if (result.m_type.empty())
+      if (result.m_name.empty())
       {
-         result.m_type = arg;
+         result.m_name = arg;
       }
 
       // otherwise -> singular content
@@ -345,7 +345,7 @@ cheap::element::element(
    std::vector<attribute> attributes,
    std::vector<content> inner_html
 )
-   : m_type(name)
+   : m_name(name)
    , m_attributes(std::move(attributes))
    , m_inner_html(std::move(inner_html))
 { }
@@ -374,7 +374,7 @@ auto cheap::element::get_trivial() const -> std::string
 auto cheap::element::is_self_closing() const -> bool
 {
    constexpr std::string_view void_elem_list[] = { "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr" };
-   return detail::is_in(void_elem_list, m_type);
+   return detail::is_in(void_elem_list, m_name);
 }
 
 auto cheap::operator ""_att(const char* c_str, std::size_t) -> attribute
@@ -390,7 +390,7 @@ auto cheap::operator ""_att(const char* c_str, std::size_t) -> attribute
    {
       result = string_attribute{
          .m_name = str.substr(0, equal_pos),
-         .m_data = str.substr(equal_pos + 1)
+         .m_value = str.substr(equal_pos + 1)
       };
    }
    detail::assert_attrib_valid(result);
@@ -531,7 +531,7 @@ auto cheap::detail::write_element_str_impl(
    {
       if(elem.m_inner_html.empty() == false)
       {
-         throw cheap_exception{CHEAP_FORMAT("The used element (\"{}\") is self-closing and can't have children", elem.m_type)};
+         throw cheap_exception{CHEAP_FORMAT("The used element (\"{}\") is self-closing and can't have children", elem.m_name)};
       }
 
       output += detail::get_spaces(current_level * indentation);
@@ -539,7 +539,7 @@ auto cheap::detail::write_element_str_impl(
       CHEAP_FORMAT_TO(
          std::back_inserter(output),
          "<{}{} />",
-         elem.m_type,
+         elem.m_name,
          detail::get_attributes_str(elem.m_attributes)
       );
       if (current_level == 0)
@@ -551,21 +551,21 @@ auto cheap::detail::write_element_str_impl(
       CHEAP_FORMAT_TO(
          std::back_inserter(output),
          "<{}{}>{}</{}>",
-         elem.m_type,
+         elem.m_name,
          detail::get_attributes_str(elem.m_attributes),
          elem.get_trivial(),
-         elem.m_type
+         elem.m_name
       );
       if (current_level == 0)
          output += '\n';
    }
    else
    {
-      CHEAP_FORMAT_TO(std::back_inserter(output), "<{}{}>", elem.m_type, detail::get_attributes_str(elem.m_attributes));
+      CHEAP_FORMAT_TO(std::back_inserter(output), "<{}{}>", elem.m_name, detail::get_attributes_str(elem.m_attributes));
       output += '\n';
       detail::get_inner_html_str(elem, indentation, current_level, output);
       output += '\n';
-      CHEAP_FORMAT_TO(std::back_inserter(output), "</{}>", elem.m_type);
+      CHEAP_FORMAT_TO(std::back_inserter(output), "</{}>", elem.m_name);
       if (current_level == 0)
          output += '\n';
    }
@@ -591,7 +591,7 @@ auto cheap::detail::write_attribute_string(const attribute& attrib, std::string&
       }
       else if constexpr (std::same_as<T, string_attribute>)
       {
-         CHEAP_FORMAT_TO(std::back_inserter(output), " {}=\"{}\"", alternative.m_name, alternative.m_data);
+         CHEAP_FORMAT_TO(std::back_inserter(output), " {}=\"{}\"", alternative.m_name, alternative.m_value);
       }
    };
    std::visit(visitor, attrib);
