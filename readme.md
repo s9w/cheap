@@ -44,7 +44,7 @@ This involves heavily templated functions. That's convenient, just be aware that
 
 `create_element(<element name>, [<attributes>], [<conents>])` accepts the element name as the first parameter. The function is variadic, you can shovel attributes and sub-elements into it at will. The sub-elements can be other elements, or a plain `std::string`.
 
-For all HTML spec elements (from [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element)), there is an equally named function. So `div(...)` is just a shortcut to `create_element("div, ...)`. Note that due to C++ limitations, the function for the `template` element is called `template_`.
+For all HTML spec elements (from [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element)), there is an equally named function. So `div(...)` is just a shortcut to `create_element("div, ...)`. Note that due to C++ limitations, the function for the `template` element is called `template_()` and the `small` creator is called `small_()`.
 
 ```c++
 auto elem = div("Hello world");

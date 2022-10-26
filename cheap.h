@@ -146,7 +146,7 @@ namespace cheap
    template<typename ... Ts> auto section   (Ts&&... args) -> element { return create_element("section",    std::forward<Ts>(args)...); }
    template<typename ... Ts> auto select    (Ts&&... args) -> element { return create_element("select",     std::forward<Ts>(args)...); }
    template<typename ... Ts> auto slot      (Ts&&... args) -> element { return create_element("slot",       std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto small     (Ts&&... args) -> element { return create_element("small",      std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto small_    (Ts&&... args) -> element { return create_element("small",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto source    (Ts&&... args) -> element { return create_element("source",     std::forward<Ts>(args)...); }
    template<typename ... Ts> auto span      (Ts&&... args) -> element { return create_element("span",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto stable    (Ts&&... args) -> element { return create_element("stable",     std::forward<Ts>(args)...); }
