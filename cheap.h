@@ -69,12 +69,12 @@ namespace cheap
    template<typename ... Ts> auto aside     (Ts&&... args) -> element { return create_element("aside",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto audio     (Ts&&... args) -> element { return create_element("audio",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto b         (Ts&&... args) -> element { return create_element("b",          std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto br        (Ts&&... args) -> element { return create_element("br",         std::forward<Ts>(args)...); }
    template<typename ... Ts> auto base      (Ts&&... args) -> element { return create_element("base",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto bdi       (Ts&&... args) -> element { return create_element("bdi",        std::forward<Ts>(args)...); }
    template<typename ... Ts> auto bdo       (Ts&&... args) -> element { return create_element("bdo",        std::forward<Ts>(args)...); }
    template<typename ... Ts> auto blockquote(Ts&&... args) -> element { return create_element("blockquote", std::forward<Ts>(args)...); }
    template<typename ... Ts> auto body      (Ts&&... args) -> element { return create_element("body",       std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto br        (Ts&&... args) -> element { return create_element("br",         std::forward<Ts>(args)...); }
    template<typename ... Ts> auto button    (Ts&&... args) -> element { return create_element("button",     std::forward<Ts>(args)...); }
    template<typename ... Ts> auto canvas    (Ts&&... args) -> element { return create_element("canvas",     std::forward<Ts>(args)...); }
    template<typename ... Ts> auto caption   (Ts&&... args) -> element { return create_element("caption",    std::forward<Ts>(args)...); }
@@ -107,7 +107,7 @@ namespace cheap
    template<typename ... Ts> auto h6        (Ts&&... args) -> element { return create_element("h6",         std::forward<Ts>(args)...); }
    template<typename ... Ts> auto head      (Ts&&... args) -> element { return create_element("head",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto header    (Ts&&... args) -> element { return create_element("header",     std::forward<Ts>(args)...); }
-   template<typename ... Ts> auto   hr      (Ts&&... args) -> element { return create_element("hr",         std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto hr        (Ts&&... args) -> element { return create_element("hr",         std::forward<Ts>(args)...); }
    template<typename ... Ts> auto html      (Ts&&... args) -> element { return create_element("html",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto i         (Ts&&... args) -> element { return create_element("i",          std::forward<Ts>(args)...); }
    template<typename ... Ts> auto iframe    (Ts&&... args) -> element { return create_element("iframe",     std::forward<Ts>(args)...); }
@@ -117,6 +117,7 @@ namespace cheap
    template<typename ... Ts> auto kdb       (Ts&&... args) -> element { return create_element("kdb",        std::forward<Ts>(args)...); }
    template<typename ... Ts> auto label     (Ts&&... args) -> element { return create_element("label",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto legend    (Ts&&... args) -> element { return create_element("legend",     std::forward<Ts>(args)...); }
+   template<typename ... Ts> auto li        (Ts&&... args) -> element { return create_element("li",         std::forward<Ts>(args)...); }
    template<typename ... Ts> auto link      (Ts&&... args) -> element { return create_element("link",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto main      (Ts&&... args) -> element { return create_element("main",       std::forward<Ts>(args)...); }
    template<typename ... Ts> auto map       (Ts&&... args) -> element { return create_element("map",        std::forward<Ts>(args)...); }
