@@ -41,6 +41,13 @@ TEST_CASE("get_element_str()") {
       CHECK_EQ(get_element_str(div("{{key}}={{value}}"_att)), "<div {{key}}=\"{{value}}\"></div>\n");
       CHECK_EQ(get_element_str(create_element("{{name}}")), "<{{name}}></{{name}}>\n");
    }
+   SUBCASE("initial_level param") {
+      CHECK_EQ(get_element_str(div(), 2, 0), "<div></div>\n");
+      CHECK_EQ(get_element_str(div(), 2, 1), "  <div></div>\n");
+      const auto result = get_element_str(a(a()), 2, 1);
+      const std::string expected = "  <a>\n    <a></a/>\n  </a>\n";
+      CHECK_EQ(get_element_str(a(a()), 2, 1), "  <a>\n    <a></a>\n  </a>\n");
+   }
 }
 
 // TEST_CASE("playground"){
