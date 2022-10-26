@@ -36,6 +36,11 @@ TEST_CASE("get_element_str()") {
    SUBCASE("false boolean attribute"){
       CHECK_EQ(get_element_str(img(bool_attribute{.m_name="test", .m_value = false })), "<img />\n");
    }
+   SUBCASE("inja compatibility") {
+      CHECK_EQ(get_element_str(div("{{ content }}")), "<div>{{ content }}</div>\n");
+      CHECK_EQ(get_element_str(div("{{key}}={{value}}"_att)), "<div {{key}}=\"{{value}}\"></div>\n");
+      CHECK_EQ(get_element_str(create_element("{{name}}")), "<{{name}}></{{name}}>\n");
+   }
 }
 
 // TEST_CASE("playground"){

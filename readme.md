@@ -1,6 +1,6 @@
 # **cheap** (C++ HTML Element Apparator) :heavy_dollar_sign::heavy_dollar_sign::heavy_dollar_sign:
 
-**cheap** is a C++ library to create html string. TL;DR:
+**cheap** is a C++ library to create html strings. TL;DR:
 ```c++
 const std::string elem_str = get_element_str(div(span("first"), img("src=test.jpg"_att)));
 ```
@@ -25,11 +25,11 @@ I needed this for a project, maybe others have use for some server-side renderin
 - By default, **cheap** uses `std::format()`. To use [`fmt`](https://github.com/fmtlib/fmt) instead, make sure it's included before `cheap.h` and `#define CHEAP_USE_FMT`
 - *to apparate*: originates from latin and means “to appear”
 
-Attributes can be created with the `_att` literal operator. For boolean attributes, just enter the name (`"hidden"_att`). For string attributes, write with equation sign (`"id=container"_att`). You can also just create a `bool_attribute` or `string_attribute` type. They're trivial aggregates:
+Attributes can be created with the `_att` literal operator. For boolean attributes, just enter the name (`"hidden"_att`). For string attributes, write with equation sign (`"id=container"_att`). You can also just create `bool_attribute` or `string_attribute` objects. They're straightforward aggregates:
 ```c++
 struct bool_attribute {
-   bool m_value = true;
    std::string m_name;
+   bool m_value = true;
 };
 struct string_attribute {
    std::string m_name;
@@ -42,9 +42,7 @@ There are two interfaces of creating the elements:
 ## First interface: Convenient template interface
 This involves heavily templated functions. That's convenient, just be aware that this might impact compile times depending on use.
 
-There's `create_element(<element name>, [<attributes>], [<conents>])` which accepts the element name as the first parameter. The function is variadic, you can shovel attributes and contents into it at will.
-
-The content (children) of an element can be other elements, or a plain `std::string`.
+`create_element(<element name>, [<attributes>], [<conents>])` accepts the element name as the first parameter. The function is variadic, you can shovel attributes and sub-elements into it at will. The sub-elements can be other elements, or a plain `std::string`.
 
 For all HTML spec elements (from [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element)), there is an equally named function. So `div(...)` is just a shortcut to `create_element("div, ...)`. Note that due to C++ limitations, the function for the `template` element is called `template_`.
 
@@ -131,4 +129,9 @@ Also there's self-closing tags (`<area>`, `<base>`, `<br>`, `<col>`, `<embed>`, 
 If any of that is violated, a `cheap_exception` is thrown with a meaningful error message.
 
 ## Configuration
-By default, **cheap** uses `std::format()`. To use [`fmt`](https://github.com/fmtlib/fmt) instead, make sure it's included before `cheap.h` and `#define CHEAP_USE_FMT`.
+By default, **cheap** uses [`std::format()`](https://en.cppreference.com/w/cpp/utility/format/format). To use [`fmt`](https://github.com/fmtlib/fmt) instead, make sure it's included before `cheap.h` and `#define CHEAP_USE_FMT`.
+
+## Compatibility with inja, mustache, Handlebars etc
+There's a range of popular libraries ([inja](https://github.com/pantor/inja), [mustache](https://mustache.github.io/), [handlebars](https://handlebarsjs.com/)) that fill strings that contain placeholders like `{{ this }}` with structured content - often from json or other sources. Depending on your pipeline, **cheap** might replace the need for this.
+
+But maybe it doesn't. I'm just here to tell you that such strings "survives" **cheap**. So you can use them for attributes, element names and string contents and they come out on the other side just fine - ready to be used by such libraries.
