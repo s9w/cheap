@@ -287,16 +287,11 @@ auto cheap::detail::process_variadic_param(element& result, T&& arg) -> void
          result.m_name = arg;
       }
 
-      // otherwise -> singular content
       else
       {
-         if (result.m_inner_html.empty() == false)
-         {
-            // TODO: error
+         result.m_inner_html.push_back(arg);
          }
-         result.m_inner_html = { arg };
       }
-   }
    else if constexpr (is_any_of<T, attribute, bool_attribute, string_attribute>)
    {
       result.m_attributes.push_back(arg);
