@@ -13,6 +13,7 @@ namespace cheap
    struct options
    {
       int indentation = 4;
+      bool indent_with_tab = false;
       int initial_level = 0;
       bool escaping = true;
       bool end_with_newline = true;
@@ -215,13 +216,13 @@ namespace cheap::detail
    public:
       explicit indentation_helper(const options& opt);
       [[nodiscard]] auto get_next_level() const -> indentation_helper;
-      [[nodiscard]] auto get_space_count() const -> int;
+      auto write_indentation_str(const options& opt, std::string& output) const -> void;
       [[nodiscard]] auto is_at_origin() const -> bool;
    };
 
    auto write_attribute_string(const attribute& attrib, std::string& output, const options& opt) -> void;
    [[nodiscard]] auto get_attributes_str(const std::vector<attribute>& attributes, const options& opt) -> std::string;
-   [[nodiscard]] auto get_spaces(const int count) -> std::string;
+   [[nodiscard]] auto write_repeated_char(const int count, const char ch, std::string& output) -> void;
    auto replace_all(std::string& inout, const std::string_view what, const std::string_view with) -> void;
    [[nodiscard]] auto get_escaped(const std::string& in, const options& opt) -> std::string;
    auto write_element_str_impl(const std::string& elem, const indentation_helper& indentation, const options& opt, std::string& output) -> void;
@@ -315,9 +316,16 @@ auto cheap::detail::indentation_helper::get_next_level() const -> indentation_he
 }
 
 
-auto cheap::detail::indentation_helper::get_space_count() const -> int
+auto cheap::detail::indentation_helper::write_indentation_str(const options& opt, std::string& output) const -> void
 {
-   return m_indentation * m_current_level;
+   if(opt.indent_with_tab)
+   {
+      write_repeated_char(m_current_level, '\t', output);
+   }
+   else
+   {
+      write_repeated_char(m_current_level * m_indentation, ' ', output);
+   }
 }
 
 
@@ -578,7 +586,7 @@ auto cheap::detail::write_element_str_impl(
    std::string& output
 ) -> void
 {
-   output += detail::get_spaces(indentation.get_space_count());
+   indentation.write_indentation_str(opt, output);
    output += '<';
    output += elem.m_name;
    if(elem.is_self_closing())
@@ -611,7 +619,7 @@ auto cheap::detail::write_element_str_impl(
       output += '\n';
       detail::get_inner_html_str(elem, indentation, opt, output);
       output += '\n';
-      output += detail::get_spaces(indentation.get_space_count());
+      indentation.write_indentation_str(opt, output);
       output += "</";
       output += elem.m_name;
       output += '>';
@@ -671,13 +679,16 @@ auto cheap::detail::get_attributes_str(const std::vector<attribute>& attributes,
 }
 
 
-auto cheap::detail::get_spaces(const int count) -> std::string
+auto cheap::detail::write_repeated_char(
+   const int count,
+   const char ch,
+   std::string& output
+) -> void
 {
-   std::string result;
-   result.reserve(count);
    for (int i = 0; i < count; ++i)
-      result += ' ';
-   return result;
+   {
+      output += ch;
+   }
 }
 
 
@@ -716,7 +727,7 @@ auto cheap::detail::write_element_str_impl(
    std::string& output
 ) -> void
 {
-   output += get_spaces(indentation.get_space_count());
+   indentation.write_indentation_str(opt, output);
    output += get_escaped(elem, opt);
 }
 

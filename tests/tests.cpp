@@ -85,6 +85,11 @@ TEST_CASE("trailing newline") {
    }
 }
 
+TEST_CASE("tab indentation") {
+   CHECK_EQ(get_element_str(div("abc"), options{ .indent_with_tab = false, .initial_level=1 }), "    <div>abc</div>\n");
+   CHECK_EQ(get_element_str(div("abc"), options{ .indent_with_tab = true, .initial_level=2 }), "\t\t<div>abc</div>\n");
+}
+
 // TEST_CASE("playground"){
 //    const std::string elem_str = get_element_str(
 //       { img("src=a.jpg"_att), img("src=b.jpg"_att) }

@@ -29,12 +29,14 @@ The stringification functions have an optional `options` parameter:
 struct options
 {
    int indentation = 4;
+   bool indent_with_tab = false;
    int initial_level = 0;
    bool escaping = true;
    bool end_with_newline = true;
 };
 ```
-- `indentation`: what do you think?
+- `indentation`: number of spaces to use for indenttion
+- `indent_with_tab`: use tab instead of spaces for indentation
 - `initial_level`: initial indentation level. Might be useful to set >0 if the generated html will be inserted into a bigger HTML. Note that this is the indentation *level*. The number of spaces is always `level * indentation`.
 - `escaping`: HTML escaping, i.e. `&`→`&amp;`, `<`→`&lt;` and `>`→`&gt;`. On by default
 - `end_with_newline`: By default, the resulting string always ends with a newline, as is often useful with text files. This can be disabled. this doesn't affect newlines in the middle
