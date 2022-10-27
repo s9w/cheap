@@ -42,9 +42,9 @@ TEST_CASE("get_element_str()") {
       CHECK_EQ(get_element_str(create_element("{{name}}")), "<{{name}}></{{name}}>\n");
    }
    SUBCASE("initial_level param") {
-      CHECK_EQ(get_element_str(div(), 2, 0), "<div></div>\n");
-      CHECK_EQ(get_element_str(div(), 2, 1), "  <div></div>\n");
-      CHECK_EQ(get_element_str(a(a()), 2, 1), "  <a>\n    <a></a>\n  </a>\n");
+      CHECK_EQ(get_element_str(div()), "<div></div>\n");
+      CHECK_EQ(get_element_str(div(), options{.m_initial_level = 1}), "    <div></div>\n");
+      CHECK_EQ(get_element_str(a(a()), options{ .m_initial_level = 1 }), "    <a>\n        <a></a>\n    </a>\n");
    }
 }
 

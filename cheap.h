@@ -51,10 +51,16 @@ namespace cheap
       friend auto create_element(Ts&&... args) -> element;
    };
 
-   [[nodiscard]] auto get_element_str(const element& elem,                           const int indentation = 4, const int initial_level = 0) -> std::string;
-   [[nodiscard]] auto get_element_str(const std::vector<element>& elements,          const int indentation = 4, const int initial_level = 0) -> std::string;
-   auto write_element_str(const element& elem,                  std::string& output, const int indentation = 4, const int initial_level = 0) -> void;
-   auto write_element_str(const std::vector<element>& elements, std::string& output, const int indentation = 4, const int initial_level = 0) -> void;
+   struct options
+   {
+      int m_indentation = 4;
+      int m_initial_level = 0;
+   };
+
+   [[nodiscard]] auto get_element_str(const element& elem,                           const options& opt = options{}) -> std::string;
+   [[nodiscard]] auto get_element_str(const std::vector<element>& elements,          const options& opt = options{}) -> std::string;
+   auto write_element_str(const element& elem,                  std::string& output, const options& opt = options{}) -> void;
+   auto write_element_str(const std::vector<element>& elements, std::string& output, const options& opt = options{}) -> void;
 
    inline namespace literals
    {
@@ -208,7 +214,7 @@ namespace cheap::detail
       int m_initial_level;
       int m_current_level;
    public:
-      explicit indentation_helper(const int indentation, const int initial_level);
+      explicit indentation_helper(const options& opt);
       [[nodiscard]] auto get_next_level() const -> indentation_helper;
       [[nodiscard]] auto get_space_count() const -> int;
       [[nodiscard]] auto is_at_origin() const -> bool;
@@ -334,9 +340,9 @@ auto cheap::detail::indentation_helper::is_at_origin() const -> bool
 }
 
 
-cheap::detail::indentation_helper::indentation_helper(const int indentation, const int initial_level)
-   : m_indentation(indentation)
-   , m_initial_level(initial_level)
+cheap::detail::indentation_helper::indentation_helper(const options& opt)
+   : m_indentation(opt.m_indentation)
+   , m_initial_level(opt.m_initial_level)
    , m_current_level(m_initial_level)
 {
    
@@ -346,23 +352,21 @@ cheap::detail::indentation_helper::indentation_helper(const int indentation, con
 
 auto cheap::get_element_str(
    const element& elem,
-   const int indentation,
-   const int initial_level
+   const options& opt
 ) -> std::string
 {
    std::string result;
-   write_element_str(elem, result, indentation, initial_level);
+   write_element_str(elem, result, opt);
    return result;
 }
 
 auto cheap::get_element_str(
    const std::vector<element>& elements,
-   const int indentation,
-   const int initial_level
+   const options& opt
 ) -> std::string
 {
    std::string result;
-   write_element_str(elements, result, indentation, initial_level);
+   write_element_str(elements, result, opt);
    return result;
 }
 
@@ -370,26 +374,24 @@ auto cheap::get_element_str(
 auto cheap::write_element_str(
    const element& elem,
    std::string& output,
-   const int indentation,
-   const int initial_level
+   const options& opt
 ) -> void
 {
    output.clear();
-   detail::write_element_str_impl(elem, detail::indentation_helper(indentation, initial_level), output);
+   detail::write_element_str_impl(elem, detail::indentation_helper(opt), output);
 }
 
 
 auto cheap::write_element_str(
    const std::vector<element>& elements,
    std::string& output,
-   const int indentation,
-   const int initial_level
+   const options& opt
 ) -> void
 {
    output.clear();
    for (const auto& elem : elements)
    {
-      detail::write_element_str_impl(elem, detail::indentation_helper(indentation, initial_level), output);
+      detail::write_element_str_impl(elem, detail::indentation_helper(opt), output);
    }
 }
 
