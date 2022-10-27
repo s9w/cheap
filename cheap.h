@@ -221,8 +221,8 @@ namespace cheap::detail
    };
 
    auto write_attribute_string(const attribute& attrib, std::string& output, const options& opt) -> void;
-   [[nodiscard]] auto get_attributes_str(const std::vector<attribute>& attributes, const options& opt) -> std::string;
-   [[nodiscard]] auto write_repeated_char(const int count, const char ch, std::string& output) -> void;
+   auto write_attributes_str(const std::vector<attribute>& attributes, const options& opt, std::string& output) -> void;
+   auto write_repeated_char(const int count, const char ch, std::string& output) -> void;
    auto replace_all(std::string& inout, const std::string_view what, const std::string_view with) -> void;
    [[nodiscard]] auto get_escaped(const std::string& in, const options& opt) -> std::string;
    auto write_element_str_impl(const std::string& elem, const indentation_helper& indentation, const options& opt, std::string& output) -> void;
@@ -384,10 +384,20 @@ auto cheap::write_element_str(
 ) -> void
 {
    output.clear();
-   for (const auto& elem : elements)
+
+   // Disable ending newlines in between and manually add it at the end if required
+   options intermediate_options = opt;
+   intermediate_options.end_with_newline = false;
+   for(int i=0; i<std::ssize(elements); ++i)
    {
-      detail::write_element_str_impl(elem, detail::indentation_helper(opt), opt, output);
+      detail::write_element_str_impl(elements[i], detail::indentation_helper(intermediate_options), intermediate_options, output);
+      if (i < (std::ssize(elements)-1))
+      {
+         output += '\n';
+      }
    }
+   if(opt.end_with_newline == true)
+      output += '\n';
 }
 
 cheap::element::element(
@@ -589,6 +599,8 @@ auto cheap::detail::write_element_str_impl(
    indentation.write_indentation_str(opt, output);
    output += '<';
    output += elem.m_name;
+   detail::write_attributes_str(elem.m_attributes, opt, output);
+
    if(elem.is_self_closing())
    {
       if(elem.m_inner_html.empty() == false)
@@ -599,22 +611,18 @@ auto cheap::detail::write_element_str_impl(
          throw cheap_exception{ msg };
       }
 
-      output += detail::get_attributes_str(elem.m_attributes, opt);
-      output += " />";
+      output += " /";
 
    }
    else if(elem.is_trivial())
    {
-      output += detail::get_attributes_str(elem.m_attributes, opt);
       output += '>';
       output += elem.get_trivial(opt);
       output += "</";
       output += elem.m_name;
-      output += '>';
    }
    else
    {
-      output += detail::get_attributes_str(elem.m_attributes, opt);
       output += '>';
       output += '\n';
       detail::get_inner_html_str(elem, indentation, opt, output);
@@ -622,8 +630,9 @@ auto cheap::detail::write_element_str_impl(
       indentation.write_indentation_str(opt, output);
       output += "</";
       output += elem.m_name;
-      output += '>';
    }
+
+   output += '>';
    if (indentation.is_at_origin() && opt.end_with_newline)
       output += '\n';
 }
@@ -663,19 +672,21 @@ auto cheap::detail::write_attribute_string(
 }
 
 
-auto cheap::detail::get_attributes_str(const std::vector<attribute>& attributes, const options& opt) -> std::string
+auto cheap::detail::write_attributes_str(
+   const std::vector<attribute>& attributes,
+   const options& opt,
+   std::string& output
+) -> void
 {
-   std::string result;
    const auto visitor = [&]<typename T>(const T& alternative)
    {
-      write_attribute_string(alternative, result, opt);
+      write_attribute_string(alternative, output, opt);
    };
    
    for (const auto& x : attributes)
    {
       std::visit(visitor, x);
    }
-   return result;
 }
 
 

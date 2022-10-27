@@ -90,13 +90,10 @@ TEST_CASE("tab indentation") {
    CHECK_EQ(get_element_str(div("abc"), options{ .indent_with_tab = true, .initial_level=2 }), "\t\t<div>abc</div>\n");
 }
 
-// TEST_CASE("playground"){
-//    const std::string elem_str = get_element_str(
-//       { img("src=a.jpg"_att), img("src=b.jpg"_att) }
-//    );
-//    std::ofstream file_out("test.html");
-//    file_out << elem_str;
-// }
+TEST_CASE("vector interface + trailing newlines") {
+   CHECK_EQ(get_element_str({ img(), img() }, options{ .end_with_newline = false }), "<img />\n<img />");
+   CHECK_EQ(get_element_str({ img(), img() }, options{ .end_with_newline = true }), "<img />\n<img />\n");
+}
 
 
 
