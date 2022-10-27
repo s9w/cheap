@@ -6,11 +6,6 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include <format>
-
-#ifndef CHEAP_USE_FMT
-#include <format>
-#endif
 
 
 namespace cheap
@@ -240,15 +235,6 @@ namespace cheap::detail
 
 } // namespace cheap::detail
 
-#ifdef CHEAP_USE_FMT
-#define CHEAP_FORMAT(...) fmt::format( __VA_ARGS__ )
-#define CHEAP_FORMAT_TO(...) fmt::format_to( __VA_ARGS__ )
-#else
-#define CHEAP_FORMAT(...) std::format( __VA_ARGS__ )
-#define CHEAP_FORMAT_TO(...) std::format_to( __VA_ARGS__ )
-#endif
-
-
 
 
 
@@ -471,14 +457,20 @@ auto cheap::detail::assert_attrib_valid(const attribute& attrib) -> void
    const auto attrib_name = get_attribute_name(attrib);
    if (is_in(bool_list, attrib_name) && std::holds_alternative<bool_attribute>(attrib) == false)
    {
-      throw cheap_exception{ CHEAP_FORMAT("attribute \"{}\" must be boolean. It is not!\n", attrib_name) };
+      std::string msg = "attribute \"";
+      msg += attrib_name;
+      msg += "\" must be boolean. It is not!";
+      throw cheap_exception{ msg };
    }
 
    // Check if global string attributes are used correctly
    constexpr std::string_view string_attrib_list[] = { "accesskey", "class", "id", "is", "itemid", "itemref", "itemscope", "itemtype", "lang", "nonce", "part", "role", "slot", "style", "tabindex", "title" };
    if(is_in(string_attrib_list, attrib_name) && std::holds_alternative<string_attribute>(attrib) == false)
    {
-      throw cheap_exception{ CHEAP_FORMAT("attribute \"{}\" must be a string. It is not!\n", attrib_name) };
+      std::string msg = "attribute \"";
+      msg += attrib_name;
+      msg += "\" must be a string. It is not!";
+      throw cheap_exception{ msg };
    }
 
    // Check if global enumerated attributes are used correctly
@@ -532,7 +524,10 @@ auto cheap::detail::assert_string_enum_choice(
 {
    if (std::holds_alternative<string_attribute>(attrib) == false)
    {
-      throw cheap_exception{ CHEAP_FORMAT("Attribute \"{}\" must be a string attribute. It's not!\n", get_attribute_name(attrib)) };
+      std::string msg = "Attribute \"";
+      msg += get_attribute_name(attrib);
+      msg += "\" must be a string attribute. It's not!";
+      throw cheap_exception{ msg };
    }
 
    const auto attrib_name = get_attribute_name(attrib);
@@ -545,13 +540,13 @@ auto cheap::detail::assert_string_enum_choice(
             choices_str += ", ";
          choices_str += choices[i];
       }
-      throw cheap_exception{
-         CHEAP_FORMAT(
-            "Attribute is an enum. It must be one of [{}]. But it's \"{}\"!\n",
-            choices_str,
-            attrib_name
-         )
-      };
+
+      std::string msg = "Attribute is an enum. It must be one of [";
+      msg += choices_str;
+      msg += "]. But it's \"";
+      msg += attrib_name;
+      msg += "\"!";
+      throw cheap_exception{msg};
    }
 }
 
@@ -583,44 +578,43 @@ auto cheap::detail::write_element_str_impl(
    std::string& output
 ) -> void
 {
+   output += detail::get_spaces(indentation.get_space_count());
+   output += '<';
+   output += elem.m_name;
    if(elem.is_self_closing())
    {
       if(elem.m_inner_html.empty() == false)
       {
-         throw cheap_exception{CHEAP_FORMAT("The used element (\"{}\") is self-closing and can't have children", elem.m_name)};
+         std::string msg = "The used element (\"";
+         msg += elem.m_name;
+         msg += "\") is self-closing and can't have children";
+         throw cheap_exception{ msg };
       }
 
-      output += detail::get_spaces(indentation.get_space_count());
-
-      CHEAP_FORMAT_TO(
-         std::back_inserter(output),
-         "<{}{} />",
-         elem.m_name,
-         detail::get_attributes_str(elem.m_attributes, opt)
-      );
+      output += detail::get_attributes_str(elem.m_attributes, opt);
+      output += " />";
 
    }
    else if(elem.is_trivial())
    {
-      output += detail::get_spaces(indentation.get_space_count());
-      CHEAP_FORMAT_TO(
-         std::back_inserter(output),
-         "<{}{}>{}</{}>",
-         elem.m_name,
-         detail::get_attributes_str(elem.m_attributes, opt),
-         elem.get_trivial(opt),
-         elem.m_name
-      );
+      output += detail::get_attributes_str(elem.m_attributes, opt);
+      output += '>';
+      output += elem.get_trivial(opt);
+      output += "</";
+      output += elem.m_name;
+      output += '>';
    }
    else
    {
-      output += detail::get_spaces(indentation.get_space_count());
-      CHEAP_FORMAT_TO(std::back_inserter(output), "<{}{}>", elem.m_name, detail::get_attributes_str(elem.m_attributes, opt));
+      output += detail::get_attributes_str(elem.m_attributes, opt);
+      output += '>';
       output += '\n';
       detail::get_inner_html_str(elem, indentation, opt, output);
       output += '\n';
       output += detail::get_spaces(indentation.get_space_count());
-      CHEAP_FORMAT_TO(std::back_inserter(output), "</{}>", elem.m_name);
+      output += "</";
+      output += elem.m_name;
+      output += '>';
    }
    if (indentation.is_at_origin() && opt.m_end_with_newline)
       output += '\n';
@@ -650,7 +644,11 @@ auto cheap::detail::write_attribute_string(
       }
       else if constexpr (std::same_as<T, string_attribute>)
       {
-         CHEAP_FORMAT_TO(std::back_inserter(output), " {}=\"{}\"", get_escaped(alternative.m_name, opt), get_escaped(alternative.m_value, opt));
+         output += ' ';
+         output += get_escaped(alternative.m_name, opt);
+         output += "=\"";
+         output += get_escaped(alternative.m_value, opt);
+         output += '\"';
       }
    };
    std::visit(visitor, attrib);
@@ -718,7 +716,8 @@ auto cheap::detail::write_element_str_impl(
    std::string& output
 ) -> void
 {
-   CHEAP_FORMAT_TO(std::back_inserter(output), "{}{}", get_spaces(indentation.get_space_count()), get_escaped(elem, opt));
+   output += get_spaces(indentation.get_space_count());
+   output += get_escaped(elem, opt);
 }
 
 
