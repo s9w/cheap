@@ -12,10 +12,10 @@ namespace cheap
 {
    struct options
    {
-      int m_indentation = 4;
-      int m_initial_level = 0;
-      bool m_entity_encode = true;
-      bool m_end_with_newline = true;
+      int indentation = 4;
+      int initial_level = 0;
+      bool escaping = true;
+      bool end_with_newline = true;
    };
 
    struct cheap_exception final : std::runtime_error { using runtime_error::runtime_error; };
@@ -328,8 +328,8 @@ auto cheap::detail::indentation_helper::is_at_origin() const -> bool
 
 
 cheap::detail::indentation_helper::indentation_helper(const options& opt)
-   : m_indentation(opt.m_indentation)
-   , m_initial_level(opt.m_initial_level)
+   : m_indentation(opt.indentation)
+   , m_initial_level(opt.initial_level)
    , m_current_level(m_initial_level)
 {
    
@@ -616,7 +616,7 @@ auto cheap::detail::write_element_str_impl(
       output += elem.m_name;
       output += '>';
    }
-   if (indentation.is_at_origin() && opt.m_end_with_newline)
+   if (indentation.is_at_origin() && opt.end_with_newline)
       output += '\n';
 }
 
@@ -699,7 +699,7 @@ auto cheap::detail::replace_all(
 
 auto cheap::detail::get_escaped(const std::string& in, const options& opt) -> std::string
 {
-   if (opt.m_entity_encode == false)
+   if (opt.escaping == false)
       return in;
    std::string result = in;
    replace_all(result, "&", "&amp;");

@@ -21,10 +21,25 @@ I needed this for a project, maybe others have use for some server-side renderin
 #define CHEAP_IMPL
 #include <cheap.h>
 ```
-- Indentation and initial level can be adjusted as the last parameters of `get_element_str(element, int indentation=4, int initial_level = 0)`
-- By default, **cheap** uses `std::format()`. To use [`fmt`](https://github.com/fmtlib/fmt) instead, make sure it's included before `cheap.h` and `#define CHEAP_USE_FMT`
 - *to apparate*: originates from latin and means “to appear”
 
+## Options
+The stringification functions have an optional `options` parameter:
+```c++
+struct options
+{
+   int indentation = 4;
+   int initial_level = 0;
+   bool escaping = true;
+   bool end_with_newline = true;
+};
+```
+- `indentation`: what do you think?
+- `initial_level`: initial indentation level. Might be useful to set >0 if the generated html will be inserted into a bigger HTML. Note that this is the indentation *level*. The number of spaces is always `level * indentation`.
+- `escaping`: HTML escaping, i.e. `&`→`&amp;`, `<`→`&lt;` and `>`→`&gt;`. On by default
+- `end_with_newline`: By default, the resulting string always ends with a newline, as is often useful with text files. This can be disabled. this doesn't affect newlines in the middle
+
+## Attributes
 Attributes can be created with the `_att` literal operator. For boolean attributes, just enter the name (`"hidden"_att`). For string attributes, write with equation sign (`"id=container"_att`). You can also just create `bool_attribute` or `string_attribute` objects. They're straightforward aggregates:
 ```c++
 struct bool_attribute {
@@ -97,8 +112,8 @@ Also feel free to just set the members yourself (everything is public).
 ## Parallel elements
 There's also an overload that accepts a vector of elements. It gets rendered just as you would expect.
 ```c++
-auto get_element_str(const element& elem,                  int indentation = 4, int initial_level = 0) -> std::string;
-auto get_element_str(const std::vector<element>& elements, int indentation = 4, int initial_level = 0) -> std::string;
+auto get_element_str(const element& elem,                  const options& opt = options{}) -> std::string;
+auto get_element_str(const std::vector<element>& elements, const options& opt = options{}) -> std::string;
 ```
 
 ```c++
@@ -116,8 +131,8 @@ I did some rudimentary profiling and things are still fast with a million elemen
 To alleviate memory allocation worries at least to some degree, there's an alternative set of stringification functions that write into a `std::string&`. That target string can be preallocated by the user, or re-used between changes to avoid most string allocations.
 
 ```c++
-auto write_element_str(const element& elem,                  std::string& output, int indentation = 4, int initial_level = 0) -> void;
-auto write_element_str(const std::vector<element>& elements, std::string& output, int indentation = 4, int initial_level = 0) -> void;
+auto write_element_str(const element& elem,                  std::string& output, const options& opt = options{}) -> void;
+auto write_element_str(const std::vector<element>& elements, std::string& output, const options& opt = options{}) -> void;
 ```
 
 ## Error handling
@@ -131,9 +146,6 @@ Other checks:
 - `create_element()` must get a name as the first parameter
 
 If any of that is violated, a `cheap_exception` is thrown with a meaningful error message.
-
-## Configuration
-By default, **cheap** uses [`std::format()`](https://en.cppreference.com/w/cpp/utility/format/format). To use [`fmt`](https://github.com/fmtlib/fmt) instead, make sure it's included before `cheap.h` and `#define CHEAP_USE_FMT`.
 
 ## Compatibility with inja, mustache, Handlebars etc
 There's a range of popular libraries ([inja](https://github.com/pantor/inja), [mustache](https://mustache.github.io/), [handlebars](https://handlebarsjs.com/)) that fill strings that contain placeholders like `{{ this }}` with structured content - often from json or other sources. Depending on your pipeline, **cheap** might replace the need for this.

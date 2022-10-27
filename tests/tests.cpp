@@ -43,8 +43,8 @@ TEST_CASE("get_element_str()") {
    }
    SUBCASE("initial_level param") {
       CHECK_EQ(get_element_str(div()), "<div></div>\n");
-      CHECK_EQ(get_element_str(div(), options{.m_initial_level = 1}), "    <div></div>\n");
-      CHECK_EQ(get_element_str(a(a()), options{ .m_initial_level = 1 }), "    <a>\n        <a></a>\n    </a>\n");
+      CHECK_EQ(get_element_str(div(), options{.initial_level = 1}), "    <div></div>\n");
+      CHECK_EQ(get_element_str(a(a()), options{ .initial_level = 1 }), "    <a>\n        <a></a>\n    </a>\n");
    }
 }
 
@@ -54,34 +54,34 @@ TEST_CASE("escaping")
       const auto attribute_helper = [](const attribute& attrib, const bool escape)
       {
          std::string result;
-         detail::write_attribute_string(attrib, result, options{ .m_entity_encode = escape });
+         detail::write_attribute_string(attrib, result, options{ .escaping = escape });
          return result;
       };
       CHECK_EQ(attribute_helper("a<b"_att, false), " a<b");
       CHECK_EQ(attribute_helper("a<b"_att, true), " a&lt;b");
    }
    SUBCASE("trivial content") {
-      CHECK_EQ(get_element_str(div("a<b"), options{.m_entity_encode = false}), "<div>a<b</div>\n");
-      CHECK_EQ(get_element_str(div("a<b"), options{.m_entity_encode = true}), "<div>a&lt;b</div>\n");
+      CHECK_EQ(get_element_str(div("a<b"), options{.escaping = false}), "<div>a<b</div>\n");
+      CHECK_EQ(get_element_str(div("a<b"), options{.escaping = true}), "<div>a&lt;b</div>\n");
    }
    SUBCASE("nontrivial content"){
-      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.m_entity_encode = false}), "<div>\n    <i></i>\n    a<b\n    <i></i>\n</div>\n");
-      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.m_entity_encode = true}),  "<div>\n    <i></i>\n    a&lt;b\n    <i></i>\n</div>\n");
+      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.escaping = false}), "<div>\n    <i></i>\n    a<b\n    <i></i>\n</div>\n");
+      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.escaping = true}),  "<div>\n    <i></i>\n    a&lt;b\n    <i></i>\n</div>\n");
    }
 }
 
 TEST_CASE("trailing newline") {
    SUBCASE("self-closing elements") {
-      CHECK_EQ(get_element_str(br(), options{ .m_end_with_newline = true }), "<br />\n");
-      CHECK_EQ(get_element_str(br(), options{ .m_end_with_newline = false }), "<br />");
+      CHECK_EQ(get_element_str(br(), options{ .end_with_newline = true }), "<br />\n");
+      CHECK_EQ(get_element_str(br(), options{ .end_with_newline = false }), "<br />");
    }
    SUBCASE("trivial elements") {
-      CHECK_EQ(get_element_str(div("abc"), options{ .m_end_with_newline = true }), "<div>abc</div>\n");
-      CHECK_EQ(get_element_str(div("abc"), options{ .m_end_with_newline = false }), "<div>abc</div>");
+      CHECK_EQ(get_element_str(div("abc"), options{ .end_with_newline = true }), "<div>abc</div>\n");
+      CHECK_EQ(get_element_str(div("abc"), options{ .end_with_newline = false }), "<div>abc</div>");
    }
    SUBCASE("nontrivial element") {
-      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .m_end_with_newline = true }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>\n");
-      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .m_end_with_newline = false }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>");
+      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .end_with_newline = true }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>\n");
+      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .end_with_newline = false }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>");
    }
 }
 
