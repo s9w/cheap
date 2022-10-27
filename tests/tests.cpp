@@ -70,6 +70,20 @@ TEST_CASE("escaping")
    }
 }
 
+TEST_CASE("trailing newline") {
+   SUBCASE("self-closing elements") {
+      CHECK_EQ(get_element_str(br(), options{ .m_end_with_newline = true }), "<br />\n");
+      CHECK_EQ(get_element_str(br(), options{ .m_end_with_newline = false }), "<br />");
+   }
+   SUBCASE("trivial elements") {
+      CHECK_EQ(get_element_str(div("abc"), options{ .m_end_with_newline = true }), "<div>abc</div>\n");
+      CHECK_EQ(get_element_str(div("abc"), options{ .m_end_with_newline = false }), "<div>abc</div>");
+   }
+   SUBCASE("nontrivial element") {
+      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .m_end_with_newline = true }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>\n");
+      CHECK_EQ(get_element_str(div(i(), "abc", i()), options{ .m_end_with_newline = false }), "<div>\n    <i></i>\n    abc\n    <i></i>\n</div>");
+   }
+}
 
 // TEST_CASE("playground"){
 //    const std::string elem_str = get_element_str(

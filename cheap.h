@@ -20,6 +20,7 @@ namespace cheap
       int m_indentation = 4;
       int m_initial_level = 0;
       bool m_entity_encode = true;
+      bool m_end_with_newline = true;
    };
 
    struct cheap_exception final : std::runtime_error { using runtime_error::runtime_error; };
@@ -597,8 +598,7 @@ auto cheap::detail::write_element_str_impl(
          elem.m_name,
          detail::get_attributes_str(elem.m_attributes, opt)
       );
-      if (indentation.is_at_origin())
-         output += '\n';
+
    }
    else if(elem.is_trivial())
    {
@@ -611,8 +611,6 @@ auto cheap::detail::write_element_str_impl(
          elem.get_trivial(opt),
          elem.m_name
       );
-      if (indentation.is_at_origin())
-         output += '\n';
    }
    else
    {
@@ -623,9 +621,9 @@ auto cheap::detail::write_element_str_impl(
       output += '\n';
       output += detail::get_spaces(indentation.get_space_count());
       CHEAP_FORMAT_TO(std::back_inserter(output), "</{}>", elem.m_name);
-      if (indentation.is_at_origin())
-         output += '\n';
    }
+   if (indentation.is_at_origin() && opt.m_end_with_newline)
+      output += '\n';
 }
 
 
