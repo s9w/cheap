@@ -48,6 +48,29 @@ TEST_CASE("get_element_str()") {
    }
 }
 
+TEST_CASE("escaping")
+{
+   SUBCASE("attributes"){
+      const auto attribute_helper = [](const attribute& attrib, const bool escape)
+      {
+         std::string result;
+         detail::write_attribute_string(attrib, result, options{ .m_entity_encode = escape });
+         return result;
+      };
+      CHECK_EQ(attribute_helper("a<b"_att, false), " a<b");
+      CHECK_EQ(attribute_helper("a<b"_att, true), " a&lt;b");
+   }
+   SUBCASE("trivial content") {
+      CHECK_EQ(get_element_str(div("a<b"), options{.m_entity_encode = false}), "<div>a<b</div>\n");
+      CHECK_EQ(get_element_str(div("a<b"), options{.m_entity_encode = true}), "<div>a&lt;b</div>\n");
+   }
+   SUBCASE("nontrivial content"){
+      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.m_entity_encode = false}), "<div>\n    <i></i>\n    a<b\n    <i></i>\n</div>\n");
+      CHECK_EQ(get_element_str(div(i(),"a<b", i()), options{.m_entity_encode = true}),  "<div>\n    <i></i>\n    a&lt;b\n    <i></i>\n</div>\n");
+   }
+}
+
+
 // TEST_CASE("playground"){
 //    const std::string elem_str = get_element_str(
 //       { img("src=a.jpg"_att), img("src=b.jpg"_att) }

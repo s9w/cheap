@@ -15,6 +15,13 @@
 
 namespace cheap
 {
+   struct options
+   {
+      int m_indentation = 4;
+      int m_initial_level = 0;
+      bool m_entity_encode = true;
+   };
+
    struct cheap_exception final : std::runtime_error { using runtime_error::runtime_error; };
 
    struct bool_attribute {
@@ -42,7 +49,7 @@ namespace cheap
       explicit element(const std::string_view name, std::vector<content> inner_html);
       explicit element(const std::string_view name);
       [[nodiscard]] auto is_trivial() const -> bool;
-      [[nodiscard]] auto get_trivial() const -> std::string;
+      [[nodiscard]] auto get_trivial(const options& opt) const -> std::string;
       [[nodiscard]] auto is_self_closing() const -> bool;
 
    private:
@@ -51,11 +58,7 @@ namespace cheap
       friend auto create_element(Ts&&... args) -> element;
    };
 
-   struct options
-   {
-      int m_indentation = 4;
-      int m_initial_level = 0;
-   };
+
 
    [[nodiscard]] auto get_element_str(const element& elem,                           const options& opt = options{}) -> std::string;
    [[nodiscard]] auto get_element_str(const std::vector<element>& elements,          const options& opt = options{}) -> std::string;
@@ -64,7 +67,7 @@ namespace cheap
 
    inline namespace literals
    {
-      auto operator ""_att(const char* c_str, const std::size_t)->attribute;
+      auto operator ""_att(const char* c_str, const std::size_t) -> attribute;
    }
 
    template<typename ... Ts>
@@ -220,13 +223,15 @@ namespace cheap::detail
       [[nodiscard]] auto is_at_origin() const -> bool;
    };
 
-   auto write_attribute_string(const attribute& attrib, std::string& output) -> void;
-   [[nodiscard]] auto get_attributes_str(const std::vector<attribute>& attributes) -> std::string;
+   auto write_attribute_string(const attribute& attrib, std::string& output, const options& opt) -> void;
+   [[nodiscard]] auto get_attributes_str(const std::vector<attribute>& attributes, const options& opt) -> std::string;
    [[nodiscard]] auto get_spaces(const int count) -> std::string;
-   auto write_element_str_impl(const std::string& elem, const indentation_helper& indentation, std::string& output) -> void;
+   auto replace_all(std::string& inout, const std::string_view what, const std::string_view with) -> void;
+   [[nodiscard]] auto get_escaped(const std::string& in, const options& opt) -> std::string;
+   auto write_element_str_impl(const std::string& elem, const indentation_helper& indentation, const options& opt, std::string& output) -> void;
 
-   auto get_inner_html_str(const element& elem, const indentation_helper& indentation, std::string& output) -> void;
-   auto write_element_str_impl(const element& elem, const indentation_helper& indentation, std::string& output) -> void;
+   auto get_inner_html_str(const element& elem, const indentation_helper& indentation, const options& opt, std::string& output) -> void;
+   auto write_element_str_impl(const element& elem, const indentation_helper& indentation, const options& opt, std::string& output) -> void;
    [[nodiscard]] auto get_attribute_name(const attribute& attrib) -> std::string;
    [[nodiscard]] auto is_in(const std::span<const std::string_view> choices, const std::string& value) -> bool;
    auto assert_attrib_valid(const attribute& attrib) -> void;
@@ -290,8 +295,8 @@ auto cheap::detail::process_variadic_param(element& result, T&& arg) -> void
       else
       {
          result.m_inner_html.push_back(arg);
-         }
       }
+   }
    else if constexpr (is_any_of<T, attribute, bool_attribute, string_attribute>)
    {
       result.m_attributes.push_back(arg);
@@ -373,7 +378,7 @@ auto cheap::write_element_str(
 ) -> void
 {
    output.clear();
-   detail::write_element_str_impl(elem, detail::indentation_helper(opt), output);
+   detail::write_element_str_impl(elem, detail::indentation_helper(opt), opt, output);
 }
 
 
@@ -386,7 +391,7 @@ auto cheap::write_element_str(
    output.clear();
    for (const auto& elem : elements)
    {
-      detail::write_element_str_impl(elem, detail::indentation_helper(opt), output);
+      detail::write_element_str_impl(elem, detail::indentation_helper(opt), opt, output);
    }
 }
 
@@ -414,11 +419,11 @@ auto cheap::element::is_trivial() const -> bool
    return m_inner_html.size() == 1 && std::holds_alternative<std::string>(m_inner_html.front());
 }
 
-auto cheap::element::get_trivial() const -> std::string
+auto cheap::element::get_trivial(const options& opt) const -> std::string
 {
    if (m_inner_html.empty())
       return "";
-   return std::get<std::string>(m_inner_html.front());
+   return detail::get_escaped(std::get<std::string>(m_inner_html.front()), opt);
 }
 
 auto cheap::element::is_self_closing() const -> bool
@@ -573,6 +578,7 @@ auto cheap::detail::is_in(const std::span<const std::string_view> choices, const
 auto cheap::detail::write_element_str_impl(
    const element& elem,
    const indentation_helper& indentation,
+   const options& opt,
    std::string& output
 ) -> void
 {
@@ -589,7 +595,7 @@ auto cheap::detail::write_element_str_impl(
          std::back_inserter(output),
          "<{}{} />",
          elem.m_name,
-         detail::get_attributes_str(elem.m_attributes)
+         detail::get_attributes_str(elem.m_attributes, opt)
       );
       if (indentation.is_at_origin())
          output += '\n';
@@ -601,8 +607,8 @@ auto cheap::detail::write_element_str_impl(
          std::back_inserter(output),
          "<{}{}>{}</{}>",
          elem.m_name,
-         detail::get_attributes_str(elem.m_attributes),
-         elem.get_trivial(),
+         detail::get_attributes_str(elem.m_attributes, opt),
+         elem.get_trivial(opt),
          elem.m_name
       );
       if (indentation.is_at_origin())
@@ -611,9 +617,9 @@ auto cheap::detail::write_element_str_impl(
    else
    {
       output += detail::get_spaces(indentation.get_space_count());
-      CHEAP_FORMAT_TO(std::back_inserter(output), "<{}{}>", elem.m_name, detail::get_attributes_str(elem.m_attributes));
+      CHEAP_FORMAT_TO(std::back_inserter(output), "<{}{}>", elem.m_name, detail::get_attributes_str(elem.m_attributes, opt));
       output += '\n';
-      detail::get_inner_html_str(elem, indentation, output);
+      detail::get_inner_html_str(elem, indentation, opt, output);
       output += '\n';
       output += detail::get_spaces(indentation.get_space_count());
       CHEAP_FORMAT_TO(std::back_inserter(output), "</{}>", elem.m_name);
@@ -623,7 +629,11 @@ auto cheap::detail::write_element_str_impl(
 }
 
 
-auto cheap::detail::write_attribute_string(const attribute& attrib, std::string& output) -> void
+auto cheap::detail::write_attribute_string(
+   const attribute& attrib,
+   std::string& output,
+   const options& opt
+) -> void
 {
    const auto visitor = [&]<is_alternative_c<attribute> T>(const T& alternative) -> void
    {
@@ -638,23 +648,23 @@ auto cheap::detail::write_attribute_string(const attribute& attrib, std::string&
          if (alternative.m_value == false)
             return;
          output += " ";
-         output += alternative.m_name;
+         output += get_escaped(alternative.m_name, opt);
       }
       else if constexpr (std::same_as<T, string_attribute>)
       {
-         CHEAP_FORMAT_TO(std::back_inserter(output), " {}=\"{}\"", alternative.m_name, alternative.m_value);
+         CHEAP_FORMAT_TO(std::back_inserter(output), " {}=\"{}\"", get_escaped(alternative.m_name, opt), get_escaped(alternative.m_value, opt));
       }
    };
    std::visit(visitor, attrib);
 }
 
 
-auto cheap::detail::get_attributes_str(const std::vector<attribute>& attributes) -> std::string
+auto cheap::detail::get_attributes_str(const std::vector<attribute>& attributes, const options& opt) -> std::string
 {
    std::string result;
    const auto visitor = [&]<typename T>(const T& alternative)
    {
-      write_attribute_string(alternative, result);
+      write_attribute_string(alternative, result, opt);
    };
    
    for (const auto& x : attributes)
@@ -675,27 +685,56 @@ auto cheap::detail::get_spaces(const int count) -> std::string
 }
 
 
+auto cheap::detail::replace_all(
+   std::string& inout,
+   const std::string_view what,
+   const std::string_view with
+) -> void
+{
+   std::size_t count{};
+   for (std::string::size_type pos{};
+      (pos = inout.find(what.data(), pos, what.length())) != std::string::npos;
+      pos += with.length(), ++count)
+   {
+      inout.replace(pos, what.length(), with.data(), with.length());
+   }
+}
+
+
+auto cheap::detail::get_escaped(const std::string& in, const options& opt) -> std::string
+{
+   if (opt.m_entity_encode == false)
+      return in;
+   std::string result = in;
+   replace_all(result, "&", "&amp;");
+   replace_all(result, "<", "&lt;");
+   replace_all(result, ">", "&gt;");
+   return result;
+}
+
+
 auto cheap::detail::write_element_str_impl(
    const std::string& elem,
    const indentation_helper& indentation,
+   const options& opt,
    std::string& output
 ) -> void
 {
-   CHEAP_FORMAT_TO(std::back_inserter(output), "{}{}", get_spaces(indentation.get_space_count()), elem);
+   CHEAP_FORMAT_TO(std::back_inserter(output), "{}{}", get_spaces(indentation.get_space_count()), get_escaped(elem, opt));
 }
 
 
 auto cheap::detail::get_inner_html_str(
    const element& elem,
    const indentation_helper& indentation,
+   const options& opt,
    std::string& output
 ) -> void
 {
    const auto content_visitor = [&]<typename T>(const T& alternative) -> void
    {
-      write_element_str_impl(alternative, indentation.get_next_level(), output);
+      write_element_str_impl(alternative, indentation.get_next_level(), opt, output);
    };
-
 
    for(int i=0; i<std::ssize(elem.m_inner_html); ++i)
    {
