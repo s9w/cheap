@@ -37,6 +37,8 @@ struct string_attribute {
 };
 ```
 
+The literal operator is defined in an `inline namespace cheap::literals`, so you have the choice of either `using namespace cheap` or a more restrictive `using namespace cheap::literals;`.
+
 There are two interfaces of creating the elements:
 
 ## First interface: Convenient template interface

@@ -29,8 +29,6 @@ namespace cheap
    static_assert(std::is_aggregate_v<string_attribute>);
    using attribute = std::variant<bool_attribute, string_attribute>;
 
-   auto operator ""_att(const char* c_str, const std::size_t) -> attribute;
-
    struct element;
    using content = std::variant<element, std::string>;
 
@@ -57,6 +55,11 @@ namespace cheap
    [[nodiscard]] auto get_element_str(const std::vector<element>& elements,          const int indentation = 4, const int initial_level = 0) -> std::string;
    auto write_element_str(const element& elem,                  std::string& output, const int indentation = 4, const int initial_level = 0) -> void;
    auto write_element_str(const std::vector<element>& elements, std::string& output, const int indentation = 4, const int initial_level = 0) -> void;
+
+   inline namespace literals
+   {
+      auto operator ""_att(const char* c_str, const std::size_t)->attribute;
+   }
 
    template<typename ... Ts>
    [[nodiscard]] auto create_element(Ts&&... args) -> element;
@@ -173,8 +176,8 @@ namespace cheap
    template<typename ... Ts> auto var       (Ts&&... args) -> element { return create_element("var",        std::forward<Ts>(args)...); }
    template<typename ... Ts> auto video     (Ts&&... args) -> element { return create_element("video",      std::forward<Ts>(args)...); }
    template<typename ... Ts> auto wbr       (Ts&&... args) -> element { return create_element("wbr",        std::forward<Ts>(args)...); }
-
 } // namespace cheap
+
 
 namespace cheap::detail
 {
@@ -427,7 +430,7 @@ auto cheap::element::is_self_closing() const -> bool
    return detail::is_in(void_elem_list, m_name);
 }
 
-auto cheap::operator ""_att(const char* c_str, std::size_t) -> attribute
+auto cheap::literals::operator ""_att(const char* c_str, std::size_t) -> attribute
 {
    std::string str(c_str);
    const auto equal_pos = str.find('=');

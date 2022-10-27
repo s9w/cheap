@@ -81,6 +81,7 @@
     <ClInclude Include="doctest.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="literal_tests.cpp" />
     <ClCompile Include="tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
